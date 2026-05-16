@@ -3,10 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import {
-  Upload, FileText, Image, ClipboardPaste, ScanLine,
-  File, X, CheckCircle, Loader2, AlertTriangle, Sparkles
-} from "lucide-react";
+import { Upload, FileText, ClipboardPaste, ScanLine, File, X, CheckCircle, Loader2, AlertTriangle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,13 +32,6 @@ export default function AnalyzePage() {
     setDragging(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragging(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) validateAndSetFile(droppedFile);
-  }, []);
-
   const validateAndSetFile = (f: File) => {
     const allowed = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain", "image/png", "image/jpeg"];
     if (!allowed.includes(f.type)) {
@@ -54,6 +44,13 @@ export default function AnalyzePage() {
     }
     setFile(f);
   };
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile) validateAndSetFile(droppedFile);
+  }, []);
 
   const handleAnalyze = async () => {
     if (!file && !text.trim()) {
@@ -108,6 +105,7 @@ export default function AnalyzePage() {
         router.push("/dashboard/analysis-result");
       }, 500);
     } catch (error) {
+      console.error(error);
       toast.error("Analysis failed. Please check your API keys and try again.");
       setProcessing(false);
       setProgress(0);
@@ -169,6 +167,8 @@ export default function AnalyzePage() {
                 <Card className="glass-card border-white/5">
                   <CardContent className="p-4">
                     <Textarea
+                      aria-label="Paste your contract text"
+                      title="Paste your contract text"
                       placeholder="Paste your contract text here..."
                       className="min-h-[300px] bg-transparent border-white/10 focus:border-purple-500/30 resize-none"
                       value={text}
@@ -201,6 +201,8 @@ export default function AnalyzePage() {
                       ref={fileInput}
                       type="file"
                       className="hidden"
+                      aria-label="Upload contract document"
+                      title="Upload contract document"
                       accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
                       onChange={(e) => e.target.files?.[0] && validateAndSetFile(e.target.files[0])}
                     />

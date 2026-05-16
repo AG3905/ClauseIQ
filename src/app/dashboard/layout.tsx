@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Scale, LayoutDashboard, FileSearch, History, GitCompare,
-  MessageSquare, BarChart3, FileText, Settings, HelpCircle,
+  Settings, HelpCircle,
   ChevronLeft, Search, Bell, Plus, Sparkles, Menu, X, LogOut, User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    setMobileOpen(false);
+    if (mobileOpen) {
+      setMobileOpen(false);
+    }
   }, [pathname]);
 
   return (
@@ -75,7 +77,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <p className="text-[10px] text-muted-foreground">Legal Intelligence</p>
             </div>
           )}
-          <button onClick={() => setMobileOpen(false)} className="ml-auto lg:hidden">
+          <button aria-label="Close sidebar" title="Close sidebar" onClick={() => setMobileOpen(false)} className="ml-auto lg:hidden">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -83,7 +85,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* New Analysis Button */}
         <div className="px-3 py-4">
           <Link href="/dashboard/analyze">
-            <Button className={`w-full bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white border-0 shadow-lg shadow-purple-500/20 ${collapsed ? "px-0 justify-center" : ""}`} size={collapsed ? "icon" : "default"}>
+            <Button aria-label="New Analysis" title="New Analysis" className={`w-full bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white border-0 shadow-lg shadow-purple-500/20 ${collapsed ? "px-0 justify-center" : ""}`} size={collapsed ? "icon" : "default"}>
               <Plus className="w-4 h-4" />
               {!collapsed && <span className="ml-2">New Analysis</span>}
             </Button>
@@ -128,6 +130,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Collapse Toggle (desktop) */}
         <button
           onClick={() => setCollapsed(!collapsed)}
+          aria-label="Toggle sidebar" 
+          title="Toggle sidebar"
           className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 rounded-full bg-[oklch(0.15_0.02_270)] border border-white/10 items-center justify-center hover:bg-purple-500/20 transition-colors"
         >
           <ChevronLeft className={`w-3 h-3 transition-transform ${collapsed ? "rotate-180" : ""}`} />
@@ -138,7 +142,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className={`flex-1 transition-all duration-300 ${collapsed ? "lg:ml-[72px]" : "lg:ml-64"}`}>
         {/* Top Navbar */}
         <header className="sticky top-0 z-30 h-16 border-b border-white/5 glass flex items-center px-4 lg:px-6 gap-4">
-          <button onClick={() => setMobileOpen(true)} className="lg:hidden">
+          <button aria-label="Open sidebar" title="Open sidebar" onClick={() => setMobileOpen(true)} className="lg:hidden">
             <Menu className="w-5 h-5" />
           </button>
 
@@ -153,20 +157,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-lg hover:bg-white/[0.03] transition-colors">
+            <button aria-label="Notifications" title="Notifications" className="relative p-2 rounded-lg hover:bg-white/[0.03] transition-colors">
               <Bell className="w-4.5 h-4.5 text-muted-foreground" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-purple-500" />
             </button>
 
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2">
-                  <Avatar className="w-8 h-8">
-                    <AvatarFallback className="bg-gradient-to-br from-purple-500 to-violet-600 text-xs text-white">
-                      SA
-                    </AvatarFallback>
-                  </Avatar>
-                </button>
+              <DropdownMenuTrigger aria-label="User menu" title="User menu" className="flex items-center gap-2 outline-none border-0 bg-transparent cursor-pointer">
+                <Avatar className="w-8 h-8">
+                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-violet-600 text-xs text-white">
+                    SA
+                  </AvatarFallback>
+                </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48 glass-card border-white/10">
                 <DropdownMenuItem className="gap-2"><User className="w-4 h-4" /> Profile</DropdownMenuItem>
@@ -187,6 +189,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Floating AI Assistant Button */}
       <Link href="/dashboard/chat">
         <motion.button
+          aria-label="AI Assistant"
+          title="AI Assistant"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
           className="fixed bottom-6 right-6 w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600 to-violet-600 shadow-xl shadow-purple-500/30 flex items-center justify-center z-50 hover:shadow-purple-500/50 transition-shadow"

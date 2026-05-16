@@ -15,10 +15,11 @@ export async function POST(req: NextRequest) {
     if (fileName.endsWith(".txt")) {
       text = await file.text();
     } else if (fileName.endsWith(".pdf")) {
-      // Dynamic import to avoid issues with server-side loading
-      const pdfParse = (await import("pdf-parse")).default;
+      // Basic PDF text extraction using pdf-parse v2+
+      const { PDFParse } = require("pdf-parse");
       const buffer = Buffer.from(await file.arrayBuffer());
-      const data = await pdfParse(buffer);
+      const parser = new PDFParse({ data: buffer });
+      const data = await parser.getText();
       text = data.text;
     } else if (fileName.endsWith(".docx")) {
       // Basic DOCX text extraction
@@ -47,8 +48,11 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ text, fileName: file.name, charCount: text.length });
-  } catch (error: unknown) {
-    console.error("Extraction error:", error);
-    return NextResponse.json({ error: "Text extraction failed" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Extraction error details:", error);
+    return NextResponse.json({ 
+      error: "Text extraction failed", 
+      details: error?.message || String(error) 
+    }, { status: 500 });
   }
 }
