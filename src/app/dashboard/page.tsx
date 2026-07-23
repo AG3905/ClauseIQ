@@ -1,9 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
-  FileText, AlertTriangle, TrendingUp, Upload,
-  ArrowUpRight, ArrowDownRight, Shield, Clock
+  FileText, AlertTriangle, Upload,
+  ArrowUpRight, Shield, Clock, FileCheck, ArrowRight
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,177 +22,184 @@ const chartData = [
 ];
 
 const recentAnalyses = [
-  { name: "Acme Corp – Vendor MSA 2024", type: "Commercial / MSA", risk: "high" as const, time: "2 hours ago" },
-  { name: "Globex Employment Agreement", type: "HR / Employment", risk: "low" as const, time: "5 hours ago" },
-  { name: "TechStart NDA – Series A", type: "Legal / NDA", risk: "medium" as const, time: "1 day ago" },
-  { name: "Cloud Service SLA Agreement", type: "IT / SLA", risk: "low" as const, time: "2 days ago" },
+  { name: "Acme Corp – Vendor MSA 2026", type: "Commercial / MSA", risk: "danger" as const, score: "74/100", time: "2 hours ago" },
+  { name: "Globex Employment Agreement", type: "HR / Employment", risk: "safe" as const, score: "18/100", time: "5 hours ago" },
+  { name: "TechStart NDA – Series A", type: "Legal / NDA", risk: "review" as const, score: "52/100", time: "1 day ago" },
+  { name: "Cloud Service SLA Agreement", type: "IT / SLA", risk: "safe" as const, score: "24/100", time: "2 days ago" },
 ];
 
-const riskColors = {
-  low: "text-green-400 bg-green-500/10 border-green-500/20",
-  medium: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-  high: "text-red-400 bg-red-500/10 border-red-500/20",
+const riskBadgeStyle = {
+  safe: "badge-risk-safe",
+  review: "badge-risk-review",
+  danger: "badge-risk-danger",
+};
+
+const riskLabels = {
+  safe: "Low Risk",
+  review: "Needs Review",
+  danger: "Action Req",
 };
 
 const statCards = [
   { label: "Contracts Analyzed", value: "1,248", change: "+12%", up: true, icon: FileText },
-  { label: "High-Risk Alerts", value: "24", badge: "Action Req", icon: AlertTriangle },
-  { label: "Avg. Risk Score", value: "42/100", sublabel: "Low Risk", icon: Shield },
+  { label: "High Exposure Alerts", value: "24", badge: "Action Req", icon: AlertTriangle },
+  { label: "Avg. Portfolio Risk", value: "42/100", sublabel: "Low Exposure", icon: Shield },
 ];
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-3xl font-bold mb-1">Welcome back, Sarah.</h1>
-        <p className="text-muted-foreground">Here is the latest intelligence on your active contracts.</p>
-      </motion.div>
+    <div className="space-y-8 text-foreground transition-colors duration-200">
+      {/* Editorial Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
+        <div>
+          <div className="flex items-center gap-2 font-mono text-xs text-[#8C6721] dark:text-[#C99A52] uppercase tracking-wider mb-1">
+            <FileCheck className="w-3.5 h-3.5" />
+            <span>Workspace Register • Senior Counsel</span>
+          </div>
+          <h1 className="text-3xl font-serif font-bold text-foreground">Contract Intelligence Overview</h1>
+          <p className="text-xs text-muted-foreground">Summary of audited agreements, exposure alerts, and active redlines.</p>
+        </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-          >
-            <Card className="glass-card border-white/5 hover:border-purple-500/20 transition-colors">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">{stat.label}</p>
-                  <stat.icon className="w-4 h-4 text-muted-foreground" />
-                </div>
-                <div className="flex items-end gap-2">
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                  {stat.change && (
-                    <span className="flex items-center text-xs text-green-400 mb-1">
-                      <ArrowUpRight className="w-3 h-3" />
-                      {stat.change}
-                    </span>
-                  )}
-                  {stat.badge && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 mb-1">
-                      {stat.badge}
-                    </span>
-                  )}
-                  {stat.sublabel && (
-                    <span className="text-xs text-muted-foreground mb-1">{stat.sublabel}</span>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-
-        {/* Quick Upload Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Link href="/dashboard/analyze">
-            <Card className="glass-card border-white/5 hover:border-purple-500/20 transition-all cursor-pointer group h-full">
-              <CardContent className="p-5 flex flex-col items-center justify-center h-full gap-2">
-                <Upload className="w-6 h-6 text-muted-foreground group-hover:text-purple-400 transition-colors" />
-                <p className="text-sm font-medium">Quick Upload</p>
-                <p className="text-xs text-muted-foreground text-center">Drag & drop NDA or MSA files here</p>
-              </CardContent>
-            </Card>
-          </Link>
-        </motion.div>
+        <Link href="/dashboard/analyze">
+          <Button className="bg-[#8C6721] hover:bg-[#6E4E1C] dark:bg-[#C99A52] dark:hover:bg-[#B38743] text-white dark:text-[#171512] border border-[#785628] dark:border-[#B38743] text-xs font-semibold px-4 h-9 shadow-xs">
+            Upload & Analyze Document
+            <ArrowRight className="w-3.5 h-3.5 ml-2" />
+          </Button>
+        </Link>
       </div>
 
-      {/* Chart */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-      >
-        <Card className="glass-card border-white/5">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg">Analysis Volume</CardTitle>
-            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">
-              Last 30 Days ▾
-            </Button>
-          </CardHeader>
-          <CardContent className="pb-4">
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="purpleGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#7c3aed" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#7c3aed" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="name" stroke="rgba(255,255,255,0.3)" fontSize={12} />
-                  <YAxis stroke="rgba(255,255,255,0.3)" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "rgba(15, 15, 35, 0.95)",
-                      border: "1px solid rgba(124, 58, 237, 0.2)",
-                      borderRadius: "8px",
-                      color: "#e2e8f0",
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="analyses"
-                    stroke="#7c3aed"
-                    strokeWidth={2}
-                    fill="url(#purpleGrad)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+      {/* Metrics Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map((stat) => (
+          <div key={stat.label} className="paper-card p-5 rounded-lg space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">{stat.label}</p>
+              <stat.icon className="w-4 h-4 text-[#8C6721] dark:text-[#C99A52]" />
             </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+            <div className="flex items-baseline gap-2">
+              <p className="text-2xl font-serif font-bold text-foreground">{stat.value}</p>
+              {stat.change && (
+                <span className="flex items-center text-xs font-mono text-[#234D34] dark:text-[#4E8B65]">
+                  <ArrowUpRight className="w-3 h-3" />
+                  {stat.change}
+                </span>
+              )}
+              {stat.badge && (
+                <span className="badge-risk-danger px-2 py-0.5 rounded text-[10px] font-mono font-medium">
+                  {stat.badge}
+                </span>
+              )}
+              {stat.sublabel && (
+                <span className="text-xs font-mono text-muted-foreground">{stat.sublabel}</span>
+              )}
+            </div>
+          </div>
+        ))}
 
-      {/* Recent Analyses */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        <Card className="glass-card border-white/5">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg">Recent Analyses</CardTitle>
-            <Link href="/dashboard/history">
-              <Button variant="ghost" size="sm" className="text-xs text-purple-400 hover:text-purple-300">View All</Button>
-            </Link>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {recentAnalyses.map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-white/[0.02] transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                      <FileText className="w-4 h-4 text-purple-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">{item.name}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <Clock className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">{item.time}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground hidden sm:block">• {item.type}</span>
-                    <span className={`text-xs px-2.5 py-1 rounded-full border ${riskColors[item.risk]}`}>
-                      {item.risk === "high" ? "High Risk" : item.risk === "medium" ? "Medium" : "Low Risk"}
+        {/* Quick Upload Drop Block */}
+        <Link href="/dashboard/analyze" className="block">
+          <div className="paper-card p-5 rounded-lg border-dashed border-[#8C6721]/40 dark:border-[#C99A52]/40 hover:border-[#8C6721] dark:hover:border-[#C99A52] hover:bg-muted/50 transition-colors flex flex-col items-center justify-center h-full text-center space-y-1.5 cursor-pointer">
+            <Upload className="w-5 h-5 text-[#8C6721] dark:text-[#C99A52]" />
+            <p className="text-xs font-serif font-semibold text-foreground">Drag & Drop Contract</p>
+            <p className="text-[10px] font-mono text-muted-foreground">PDF, DOCX, TXT or Scanned Image</p>
+          </div>
+        </Link>
+      </div>
+
+      {/* Chart: Audit Volume */}
+      <Card className="paper-card rounded-lg border-border">
+        <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-border px-6 py-4">
+          <div>
+            <CardTitle className="text-base font-serif font-bold text-foreground">Audit Activity Volume</CardTitle>
+            <p className="text-xs font-mono text-muted-foreground">Daily contract processing rate</p>
+          </div>
+          <span className="text-xs font-mono font-semibold text-[#8C6721] dark:text-[#C99A52] bg-[#F9F5EB] dark:bg-[#2A2621] px-2.5 py-1 rounded border border-[#E6CFAB] dark:border-[#343029]">
+            Last 7 Days
+          </span>
+        </CardHeader>
+        <CardContent className="pt-6 pb-4 px-6">
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="sealGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.25} />
+                    <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="2 2" stroke="var(--border)" />
+                <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} fontFamily="var(--font-mono)" />
+                <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} fontFamily="var(--font-mono)" />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--card)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "6px",
+                    color: "var(--card-foreground)",
+                    fontSize: "12px",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="analyses"
+                  stroke="var(--primary)"
+                  strokeWidth={2}
+                  fill="url(#sealGrad)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Recent Analyses Register */}
+      <Card className="paper-card rounded-lg border-border">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-border px-6 py-4">
+          <div>
+            <CardTitle className="text-base font-serif font-bold text-foreground">Recent Agreement Audits</CardTitle>
+            <p className="text-xs font-mono text-muted-foreground">Most recently ingested contracts</p>
+          </div>
+          <Link href="/dashboard/history">
+            <Button variant="ghost" size="sm" className="text-xs font-mono text-[#8C6721] dark:text-[#C99A52] hover:text-foreground hover:bg-muted">
+              View Register →
+            </Button>
+          </Link>
+        </CardHeader>
+        <CardContent className="p-0 divide-y divide-border">
+          {recentAnalyses.map((item, i) => (
+            <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 px-6 hover:bg-muted/40 transition-colors gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded bg-[#F9F5EB] dark:bg-[#2A2621] border border-[#E6CFAB] dark:border-[#343029] flex items-center justify-center text-[#8C6721] dark:text-[#C99A52]">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-serif font-semibold text-foreground">{item.name}</p>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono mt-0.5">
+                    <span>{item.type}</span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {item.time}
                     </span>
                   </div>
                 </div>
-              ))}
+              </div>
+              <div className="flex items-center gap-3 font-mono text-xs">
+                <span className="text-muted-foreground">Risk: {item.score}</span>
+                <span className={`px-2.5 py-0.5 rounded text-[10px] font-medium uppercase ${riskBadgeStyle[item.risk]}`}>
+                  {riskLabels[item.risk]}
+                </span>
+                <Link href="/dashboard/analysis-result">
+                  <Button variant="outline" size="sm" className="h-7 text-[11px] font-mono border-border bg-card hover:bg-muted text-foreground font-semibold">
+                    View Audit
+                  </Button>
+                </Link>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 }

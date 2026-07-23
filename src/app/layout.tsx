@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -13,10 +14,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const newsreader = Newsreader({
+  variable: "--font-serif",
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+});
+
 export const metadata: Metadata = {
-  title: "ClauseIQ - AI-Powered Legal Document Analyzer",
-  description: "Understand Contracts Before You Sign. AI-powered contract analysis, risk detection, and negotiation assistance.",
-  keywords: ["legal", "contract", "AI", "analysis", "risk", "SaaS"],
+  title: "ClauseIQ - Legal Document Analysis & Redline Intelligence",
+  description: "Understand contracts before you sign. Authoritative AI contract analysis, risk detection, margin annotations, and redline negotiation.",
+  keywords: ["legal", "contract analysis", "redline", "risk management", "legal tech"],
 };
 
 export default function RootLayout({
@@ -25,20 +32,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: {
-              background: 'rgba(15, 15, 35, 0.9)',
-              border: '1px solid rgba(124, 58, 237, 0.2)',
-              color: '#e2e8f0',
-            },
-          }}
-        />
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} antialiased bg-background text-foreground paper-grain transition-colors duration-200`}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
+          {children}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                color: 'var(--card-foreground)',
+                boxShadow: '0 4px 12px rgba(28, 25, 23, 0.08)',
+                fontFamily: 'var(--font-sans)',
+              },
+            }}
+          />
+        </ThemeProvider>
       </body>
     </html>
   );
 }
+
+

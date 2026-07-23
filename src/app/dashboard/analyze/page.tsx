@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Upload, FileText, ClipboardPaste, ScanLine, File, X, CheckCircle, Loader2, AlertTriangle, Sparkles } from "lucide-react";
+import { Upload, FileText, ClipboardPaste, ScanLine, X, CheckCircle, Loader2, AlertTriangle, FileCheck, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,11 +34,11 @@ export default function AnalyzePage() {
   const validateAndSetFile = (f: File) => {
     const allowed = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain", "image/png", "image/jpeg"];
     if (!allowed.includes(f.type)) {
-      toast.error("Unsupported file type. Please upload PDF, DOCX, TXT, or image files.");
+      toast.error("Unsupported file format. Please submit PDF, DOCX, TXT, or image files.");
       return;
     }
     if (f.size > 10 * 1024 * 1024) {
-      toast.error("File too large. Maximum size is 10MB.");
+      toast.error("File size limit exceeded (Max 10MB).");
       return;
     }
     setFile(f);
@@ -54,20 +53,20 @@ export default function AnalyzePage() {
 
   const handleAnalyze = async () => {
     if (!file && !text.trim()) {
-      toast.error("Please upload a file or paste contract text.");
+      toast.error("Document content required. Upload a file or paste contract text.");
       return;
     }
 
     setProcessing(true);
-    setStep("Uploading document...");
-    setProgress(10);
+    setStep("Parsing document content...");
+    setProgress(15);
 
     try {
       let contractText = text;
 
       if (file) {
-        setStep("Extracting text from document...");
-        setProgress(25);
+        setStep("Extracting text and layout schema...");
+        setProgress(30);
         const formData = new FormData();
         formData.append("file", file);
 
@@ -77,8 +76,8 @@ export default function AnalyzePage() {
         contractText = extractData.text;
       }
 
-      setStep("AI is analyzing the contract...");
-      setProgress(50);
+      setStep("Analyzing risk exposure & redlines...");
+      setProgress(60);
 
       const analysisRes = await fetch("/api/analyze", {
         method: "POST",
@@ -86,229 +85,209 @@ export default function AnalyzePage() {
         body: JSON.stringify({ text: contractText }),
       });
 
-      if (!analysisRes.ok) throw new Error("Analysis failed");
+      if (!analysisRes.ok) throw new Error("Analysis process failed");
 
-      setStep("Generating insights...");
-      setProgress(85);
+      setStep("Formatting redline brief...");
+      setProgress(90);
 
       const analysisData = await analysisRes.json();
 
-      setStep("Complete!");
+      setStep("Analysis complete.");
       setProgress(100);
 
-      // Store in sessionStorage for results page
       sessionStorage.setItem("analysisResult", JSON.stringify(analysisData));
       sessionStorage.setItem("contractText", contractText);
-      sessionStorage.setItem("documentName", file?.name || "Pasted Contract");
+      sessionStorage.setItem("documentName", file?.name || "Pasted Contract Specimen");
+
+      toast.success("Analysis complete.");
 
       setTimeout(() => {
         router.push("/dashboard/analysis-result");
-      }, 500);
+      }, 400);
     } catch (error) {
       console.error(error);
-      toast.error("Analysis failed. Please check your API keys and try again.");
+      toast.error("Document analysis failed. Please verify configuration and retry.");
       setProcessing(false);
       setProgress(0);
     }
   };
 
-  const fileTypeIcons: Record<string, string> = {
-    "application/pdf": "PDF",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
-    "text/plain": "TXT",
-    "image/png": "PNG",
-    "image/jpeg": "JPG",
+  const fileTypeLabels: Record<string, string> = {
+    "application/pdf": "PDF DOCUMENT",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "WORD DOCX",
+    "text/plain": "PLAIN TEXT",
+    "image/png": "IMAGE PNG",
+    "image/jpeg": "IMAGE JPG",
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-8 text-foreground transition-colors duration-200">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-3xl font-bold mb-1">Document Analysis</h1>
-        <p className="text-muted-foreground">
-          Upload legal contracts, briefs, or case files for AI-driven extraction and risk assessment.
+      <div className="pb-4 border-b border-border space-y-1">
+        <div className="flex items-center gap-2 font-mono text-xs text-[#8C6721] dark:text-[#C99A52] uppercase tracking-wider">
+          <FileCheck className="w-3.5 h-3.5" />
+          <span>Ingestion & Redline Engine</span>
+        </div>
+        <h1 className="text-3xl font-serif font-bold text-foreground">Submit Contract for Audit</h1>
+        <p className="text-xs text-muted-foreground">
+          Upload PDF, DOCX, scanned image or paste clause text for automated risk evaluation and margin redlining.
         </p>
-      </motion.div>
+      </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Upload Area */}
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* Left Column: Upload / Input Workspace */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Mode Tabs */}
+          {/* Mode Selector Tabs */}
           <div className="flex gap-2">
             {[
-              { mode: "upload" as const, icon: Upload, label: "Upload File" },
+              { mode: "upload" as const, icon: Upload, label: "Upload Document" },
               { mode: "paste" as const, icon: ClipboardPaste, label: "Paste Text" },
-              { mode: "ocr" as const, icon: ScanLine, label: "OCR Scan" },
+              { mode: "ocr" as const, icon: ScanLine, label: "Scanned OCR" },
             ].map((m) => (
               <Button
                 key={m.mode}
-                variant={mode === m.mode ? "default" : "outline"}
+                variant="outline"
                 onClick={() => setMode(m.mode)}
-                className={mode === m.mode 
-                  ? "bg-purple-500/20 text-purple-300 border-purple-500/30 hover:bg-purple-500/30" 
-                  : "bg-white/[0.02] border-white/10 hover:bg-white/[0.05]"}
+                className={`text-xs font-mono h-9 transition-colors font-semibold ${
+                  mode === m.mode
+                    ? "bg-[#8C6721] dark:bg-[#C99A52] text-white dark:text-[#171512] border-[#785628] dark:border-[#B38743] hover:bg-[#6E4E1C]"
+                    : "bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+                }`}
                 size="sm"
               >
-                <m.icon className="w-4 h-4 mr-2" />
+                <m.icon className="w-3.5 h-3.5 mr-2" />
                 {m.label}
               </Button>
             ))}
           </div>
 
-          {/* Upload / Paste Area */}
-          <AnimatePresence mode="wait">
-            {mode === "paste" ? (
-              <motion.div
-                key="paste"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-              >
-                <Card className="glass-card border-white/5">
-                  <CardContent className="p-4">
-                    <Textarea
-                      aria-label="Paste your contract text"
-                      title="Paste your contract text"
-                      placeholder="Paste your contract text here..."
-                      className="min-h-[300px] bg-transparent border-white/10 focus:border-purple-500/30 resize-none"
-                      value={text}
-                      onChange={(e) => setText(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {text.length} characters • {text.split(/\s+/).filter(Boolean).length} words
-                    </p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="upload"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-              >
-                <Card
-                  className={`glass-card cursor-pointer transition-all ${
-                    dragging ? "border-purple-500/50 bg-purple-500/5" : "border-white/5"
-                  }`}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onClick={() => fileInput.current?.click()}
-                >
-                  <CardContent className="p-12 flex flex-col items-center justify-center text-center">
-                    <input
-                      ref={fileInput}
-                      type="file"
-                      className="hidden"
-                      aria-label="Upload contract document"
-                      title="Upload contract document"
-                      accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
-                      onChange={(e) => e.target.files?.[0] && validateAndSetFile(e.target.files[0])}
-                    />
-                    {file ? (
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="w-14 h-14 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
-                          <FileText className="w-7 h-7 text-purple-400" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{file.name}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {fileTypeIcons[file.type] || "FILE"} • {(file.size / 1024).toFixed(1)} KB
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-400 hover:text-red-300"
-                          onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                        >
-                          <X className="w-3 h-3 mr-1" /> Remove
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-4">
-                          <Upload className="w-8 h-8 text-purple-400" />
-                        </div>
-                        <p className="font-medium mb-1">Drag & Drop Documents</p>
-                        <p className="text-sm text-muted-foreground mb-4">or click to browse from your device</p>
-                        <div className="flex gap-2">
-                          {["PDF", "DOCX", "TXT"].map((ext) => (
-                            <span key={ext} className="px-3 py-1 rounded-full text-xs bg-purple-500/10 text-purple-300 border border-purple-500/20">
-                              {ext}
-                            </span>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Processing State */}
-          <AnimatePresence>
-            {processing && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-              >
-                <Card className="glass-card border-purple-500/20">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Loader2 className="w-5 h-5 text-purple-400 animate-spin" />
-                      <p className="text-sm font-medium">{step}</p>
+          {/* Upload / Paste Container */}
+          {mode === "paste" ? (
+            <Card className="paper-card rounded-lg border-border">
+              <CardContent className="p-4">
+                <Textarea
+                  aria-label="Paste agreement text"
+                  title="Paste agreement text"
+                  placeholder="Paste legal agreement text or specific clause provisions here..."
+                  className="min-h-[280px] bg-background border-border focus:border-[#8C6721] dark:focus:border-[#C99A52] text-xs font-serif text-foreground leading-relaxed resize-none"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                />
+                <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground mt-2">
+                  <span>{text.length} characters • {text.split(/\s+/).filter(Boolean).length} words</span>
+                  <span>UTF-8 Document Spec</span>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card
+              className={`paper-card cursor-pointer transition-all border-2 border-dashed ${
+                dragging ? "border-[#8C6721] dark:border-[#C99A52] bg-muted/60" : "border-border hover:border-[#8C6721]/60 dark:hover:border-[#C99A52]/60"
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInput.current?.click()}
+            >
+              <CardContent className="p-12 flex flex-col items-center justify-center text-center">
+                <input
+                  ref={fileInput}
+                  type="file"
+                  className="hidden"
+                  aria-label="Upload contract document file"
+                  title="Upload contract document file"
+                  accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
+                  onChange={(e) => e.target.files?.[0] && validateAndSetFile(e.target.files[0])}
+                />
+                {file ? (
+                  <div className="flex flex-col items-center gap-3 space-y-1">
+                    <div className="w-12 h-12 rounded bg-[#F9F5EB] dark:bg-[#2A2621] border border-[#E6CFAB] dark:border-[#343029] flex items-center justify-center text-[#8C6721] dark:text-[#C99A52]">
+                      <FileText className="w-6 h-6" />
                     </div>
-                    <Progress value={progress} className="h-2" />
-                    <p className="text-xs text-muted-foreground mt-2">{progress}% complete</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                    <div>
+                      <p className="font-serif font-bold text-sm text-foreground">{file.name}</p>
+                      <p className="text-[11px] font-mono text-muted-foreground mt-0.5">
+                        {fileTypeLabels[file.type] || "DOCUMENT FILE"} • {(file.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs font-mono text-[#6B1D1D] dark:text-[#E87A7A] hover:bg-[#FCF0F0] dark:hover:bg-[#2C1414]"
+                      onClick={(e) => { e.stopPropagation(); setFile(null); }}
+                    >
+                      <X className="w-3.5 h-3.5 mr-1" /> Remove File
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-14 h-14 rounded bg-[#F9F5EB] dark:bg-[#2A2621] border border-[#E6CFAB] dark:border-[#343029] flex items-center justify-center text-[#8C6721] dark:text-[#C99A52] mb-3">
+                      <Upload className="w-7 h-7" />
+                    </div>
+                    <p className="font-serif font-bold text-base text-foreground">Drag & Drop Agreement File</p>
+                    <p className="text-xs text-muted-foreground mt-1 mb-4">or click to browse local filesystem</p>
+                    <div className="flex gap-2 font-mono text-[10px]">
+                      {["PDF", "DOCX", "TXT", "OCR SCAN"].map((ext) => (
+                        <span key={ext} className="px-2.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                          {ext}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Analyze Button */}
+          {/* Processing Status Block */}
+          {processing && (
+            <Card className="paper-card rounded-lg border-[#8C6721] dark:border-[#C99A52]">
+              <CardContent className="p-5 space-y-3">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="w-4 h-4 text-[#8C6721] dark:text-[#C99A52] animate-spin" />
+                  <p className="text-xs font-serif font-semibold text-foreground">{step}</p>
+                </div>
+                <Progress value={progress} className="h-2 bg-muted" />
+                <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
+                  <span>Progress: {progress}%</span>
+                  <span>Structured JSON Parsing</span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Submit Action Button */}
           {!processing && (
             <Button
               onClick={handleAnalyze}
-              className="w-full h-12 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white border-0 shadow-lg shadow-purple-500/20 text-base"
+              className="w-full h-11 bg-[#8C6721] hover:bg-[#6E4E1C] dark:bg-[#C99A52] dark:hover:bg-[#B38743] text-white dark:text-[#171512] border border-[#785628] dark:border-[#B38743] shadow-xs text-xs font-semibold"
               disabled={!file && !text.trim()}
             >
-              <Sparkles className="w-5 h-5 mr-2" />
-              Analyze Document
+              Analyze Document & Generate Redlines
+              <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           )}
         </div>
 
-        {/* Right Panel - Analysis Params */}
+        {/* Right Column: Parameters & Specifications */}
         <div className="space-y-4">
-          <Card className="glass-card border-white/5">
-            <CardHeader>
-              <CardTitle className="text-base">Analysis Parameters</CardTitle>
+          <Card className="paper-card rounded-lg border-border">
+            <CardHeader className="border-b border-border p-4">
+              <CardTitle className="text-sm font-serif font-bold text-foreground">Audit Specifications</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-4 space-y-4 font-sans text-xs">
               {[
-                { icon: FileText, title: "Executive Summary", desc: "Generate a high-level overview of obligations and terms." },
-                { icon: AlertTriangle, title: "Risk Assessment", desc: "Identify non-standard clauses, unlimited liabilities, and missing boilerplate.", badges: ["High Risk", "Anomalies"] },
-                { icon: CheckCircle, title: "Compliance Check", desc: "Cross-reference with internal playbooks and standard frameworks." },
+                { icon: FileText, title: "Executive Summary", desc: "Produces 2-3 sentence legal overview of commercial terms." },
+                { icon: AlertTriangle, title: "Red Flag Exposure", desc: "Flags uncapped liabilities, non-standard indemnities, and termination asymmetry." },
+                { icon: CheckCircle, title: "Margin Redlining", desc: "Generates struck-through original text alongside inserted counter-proposal rewrites." },
               ].map((param, i) => (
-                <div key={i} className="flex gap-3 p-3 rounded-lg hover:bg-white/[0.02] transition-colors">
-                  <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
-                    <param.icon className="w-4 h-4 text-purple-400" />
+                <div key={i} className="flex gap-3">
+                  <div className="w-8 h-8 rounded bg-[#F9F5EB] dark:bg-[#2A2621] border border-[#E6CFAB] dark:border-[#343029] flex items-center justify-center text-[#8C6721] dark:text-[#C99A52] flex-shrink-0">
+                    <param.icon className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">{param.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{param.desc}</p>
-                    {param.badges && (
-                      <div className="flex gap-1.5 mt-2">
-                        {param.badges.map((b) => (
-                          <span key={b} className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20">{b}</span>
-                        ))}
-                      </div>
-                    )}
+                    <p className="font-serif font-semibold text-foreground">{param.title}</p>
+                    <p className="text-muted-foreground text-[11px] leading-relaxed mt-0.5">{param.desc}</p>
                   </div>
                 </div>
               ))}
