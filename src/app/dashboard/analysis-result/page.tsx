@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
 import type { AnalysisResult } from "@/types";
+import { MotionSection, MotionItem } from "@/components/motion";
 
 const verdictConfig = {
   safe: {
@@ -127,10 +128,10 @@ export default function AnalysisResultPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-8 text-foreground transition-colors duration-200">
       {/* Editorial Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
-        <div className="flex items-center gap-3">
+      <MotionSection amount={0.2} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
+        <MotionItem className="flex items-center gap-3">
           <Link href="/dashboard/analyze">
-            <Button variant="outline" size="icon" className="h-9 w-9 bg-card border-border hover:bg-muted text-foreground">
+            <Button variant="outline" size="icon" className="h-9 w-9 bg-card border-border hover:bg-muted text-foreground btn-zoom">
               <ArrowLeft className="w-4 h-4" />
             </Button>
           </Link>
@@ -142,158 +143,174 @@ export default function AnalysisResultPage() {
             </div>
             <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground">{docName}</h1>
           </div>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="h-9 text-xs font-mono bg-card border-border hover:bg-muted text-foreground font-semibold">
+        </MotionItem>
+        <MotionItem className="flex gap-2">
+          <Button variant="outline" size="sm" className="h-9 text-xs font-mono bg-card border-border hover:bg-muted text-foreground font-semibold btn-zoom">
             <Share2 className="w-3.5 h-3.5 mr-2" /> Share Brief
           </Button>
-          <Button variant="outline" size="sm" className="h-9 text-xs font-mono bg-card border-border hover:bg-muted text-foreground font-semibold">
+          <Button variant="outline" size="sm" className="h-9 text-xs font-mono bg-card border-border hover:bg-muted text-foreground font-semibold btn-zoom">
             <Download className="w-3.5 h-3.5 mr-2" /> Export PDF Redline
           </Button>
-        </div>
-      </div>
+        </MotionItem>
+      </MotionSection>
 
       {/* Verdict & Exposure Score Bar */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <MotionSection amount={0.15} className="grid md:grid-cols-2 gap-6">
         {/* Verdict Seal */}
-        <div className={`paper-card p-6 rounded-lg ${vc.border} ${vc.bg} space-y-3`}>
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Audit Verdict Seal</span>
-            <span className={`px-2.5 py-0.5 rounded text-xs font-mono font-medium ${vc.badge}`}>
-              {vc.label}
-            </span>
-          </div>
-          <div className="flex items-start gap-4">
-            <div className={`w-12 h-12 rounded flex items-center justify-center flex-shrink-0 ${vc.bg} border ${vc.border}`}>
-              <VerdictIcon className={`w-7 h-7 ${vc.color}`} />
+        <MotionItem>
+          <div className={`paper-card paper-card-interactive p-6 rounded-lg ${vc.border} ${vc.bg} space-y-3 group`}>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Audit Verdict Seal</span>
+              <span className={`px-2.5 py-0.5 rounded text-xs font-mono font-medium ${vc.badge}`}>
+                {vc.label}
+              </span>
             </div>
-            <div>
-              <p className={`text-2xl font-serif font-bold ${vc.color}`}>{result.verdictLabel}</p>
-              <p className="text-xs font-sans text-muted-foreground mt-1 leading-relaxed">{result.verdictReason}</p>
+            <div className="flex items-start gap-4">
+              <div className={`w-12 h-12 rounded flex items-center justify-center flex-shrink-0 ${vc.bg} border ${vc.border} icon-box-zoom`}>
+                <VerdictIcon className={`w-7 h-7 ${vc.color} icon-zoom`} />
+              </div>
+              <div>
+                <p className={`text-2xl font-serif font-bold ${vc.color}`}>{result.verdictLabel}</p>
+                <p className="text-xs font-sans text-muted-foreground mt-1 leading-relaxed">{result.verdictReason}</p>
+              </div>
             </div>
           </div>
-        </div>
+        </MotionItem>
 
         {/* Risk Exposure Score */}
-        <div className="paper-card p-6 rounded-lg space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Exposure Index</span>
-            <span className="font-mono text-2xl font-bold text-[#6B1D1D] dark:text-[#E87A7A]">
-              {result.riskScore}<span className="text-xs text-muted-foreground">/100</span>
-            </span>
+        <MotionItem>
+          <div className="paper-card paper-card-interactive p-6 rounded-lg space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Exposure Index</span>
+              <span className="font-mono text-2xl font-bold text-[#6B1D1D] dark:text-[#E87A7A]">
+                {result.riskScore}<span className="text-xs text-muted-foreground">/100</span>
+              </span>
+            </div>
+            <Progress value={result.riskScore} className="h-2 bg-muted" />
+            <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
+              <span className="text-[#234D34] dark:text-[#4E8B65]">0-30 (Standard)</span>
+              <span className="text-[#6E4410] dark:text-[#E5A85C]">31-65 (Caution)</span>
+              <span className="text-[#6B1D1D] dark:text-[#E87A7A]">66-100 (High Risk)</span>
+            </div>
           </div>
-          <Progress value={result.riskScore} className="h-2 bg-muted" />
-          <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
-            <span className="text-[#234D34] dark:text-[#4E8B65]">0-30 (Standard)</span>
-            <span className="text-[#6E4410] dark:text-[#E5A85C]">31-65 (Caution)</span>
-            <span className="text-[#6B1D1D] dark:text-[#E87A7A]">66-100 (High Risk)</span>
-          </div>
-        </div>
-      </div>
+        </MotionItem>
+      </MotionSection>
 
       {/* Executive Summary */}
-      <div className="paper-card p-6 rounded-lg space-y-2">
-        <h2 className="text-base font-serif font-bold text-foreground flex items-center gap-2">
-          <FileText className="w-4 h-4 text-[#8C6721] dark:text-[#C99A52]" />
-          Executive Brief Summary
-        </h2>
-        <p className="text-xs font-serif text-foreground leading-relaxed italic bg-background p-4 rounded border border-border">
-          "{result.summary}"
-        </p>
-      </div>
+      <MotionSection amount={0.15}>
+        <MotionItem>
+          <div className="paper-card paper-card-interactive p-6 rounded-lg space-y-2 group">
+            <h2 className="text-base font-serif font-bold text-foreground flex items-center gap-2">
+              <div className="w-7 h-7 rounded bg-[#F9F5EB] dark:bg-[#2A2621] border border-[#E6CFAB] dark:border-[#343029] flex items-center justify-center icon-box-zoom">
+                <FileText className="w-4 h-4 text-[#8C6721] dark:text-[#C99A52] icon-zoom" />
+              </div>
+              Executive Brief Summary
+            </h2>
+            <p className="text-xs font-serif text-foreground leading-relaxed italic bg-background p-4 rounded border border-border">
+              "{result.summary}"
+            </p>
+          </div>
+        </MotionItem>
+      </MotionSection>
 
       {/* Tabs Section */}
-      <Tabs defaultValue="clauses" className="space-y-6">
-        <TabsList className="bg-muted border border-border p-1 gap-1">
-          <TabsTrigger value="clauses" className="text-xs font-mono font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground">
-            Clause Breakdown ({result.clauses.length})
-          </TabsTrigger>
-          <TabsTrigger value="redflags" className="text-xs font-mono font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground">
-            Red Flags ({result.redFlags.length})
-          </TabsTrigger>
-          <TabsTrigger value="dates" className="text-xs font-mono font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground">
-            Key Deadlines ({result.dates.length})
-          </TabsTrigger>
-        </TabsList>
+      <MotionSection amount={0.1} className="space-y-6">
+        <MotionItem>
+          <Tabs defaultValue="clauses" className="space-y-6">
+            <TabsList className="bg-muted border border-border p-1 gap-1">
+              <TabsTrigger value="clauses" className="text-xs font-mono font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground btn-zoom">
+                Clause Breakdown ({result.clauses.length})
+              </TabsTrigger>
+              <TabsTrigger value="redflags" className="text-xs font-mono font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground btn-zoom">
+                Red Flags ({result.redFlags.length})
+              </TabsTrigger>
+              <TabsTrigger value="dates" className="text-xs font-mono font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground btn-zoom">
+                Key Deadlines ({result.dates.length})
+              </TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="clauses" className="space-y-4">
-          {result.clauses.map((clause) => {
-            const isExpanded = expandedClauses.includes(clause.id);
-            const rc = riskConfig[clause.riskLevel];
-            return (
-              <div key={clause.id} className={`paper-card rounded-lg p-6 ${rc.rule} space-y-4`}>
-                <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleClause(clause.id)}>
-                  <div className="flex items-center gap-3">
-                    <span className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-medium uppercase ${rc.badge}`}>
-                      {clause.riskLevel} exposure
-                    </span>
-                    <h3 className="text-base font-serif font-bold text-foreground">{clause.title}</h3>
-                  </div>
-                  {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-                </div>
-
-                <div className="space-y-3 font-serif text-sm">
-                  <div className="p-3 bg-background border border-border rounded font-serif text-xs leading-relaxed text-foreground">
-                    <span className="font-mono text-[10px] text-muted-foreground uppercase block mb-1">ORIGINAL CLAUSE PROVISION:</span>
-                    "{clause.originalText}"
-                  </div>
-
-                  {clause.rewriteOption && (
-                    <div className="p-3 bg-[#EDF4EF] dark:bg-[#1B2E21] border border-[#BCD4C4] dark:border-[#2C4F37] rounded font-serif text-xs leading-relaxed text-[#154027] dark:text-[#4E8B65]">
-                      <span className="font-mono text-[10px] text-[#234D34] dark:text-[#4E8B65] uppercase block mb-1 font-bold">PROPOSED REDLINE REWRITE:</span>
-                      "{clause.rewriteOption}"
+            <TabsContent value="clauses" className="space-y-4">
+              {result.clauses.map((clause) => {
+                const isExpanded = expandedClauses.includes(clause.id);
+                const rc = riskConfig[clause.riskLevel];
+                return (
+                  <div key={clause.id} className={`paper-card paper-card-interactive rounded-lg p-6 ${rc.rule} space-y-4`}>
+                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleClause(clause.id)}>
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-medium uppercase ${rc.badge}`}>
+                          {clause.riskLevel} exposure
+                        </span>
+                        <h3 className="text-base font-serif font-bold text-foreground">{clause.title}</h3>
+                      </div>
+                      {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                     </div>
-                  )}
-                </div>
 
-                {isExpanded && (
-                  <div className="pt-3 border-t border-border space-y-2 text-xs font-sans">
-                    <p className="text-muted-foreground"><strong className="text-foreground font-mono">Analysis:</strong> {clause.explanation}</p>
-                    <p className="text-muted-foreground"><strong className="text-foreground font-mono">Negotiation Strategy:</strong> {clause.negotiationSuggestion}</p>
+                    <div className="space-y-3 font-serif text-sm">
+                      <div className="p-3 bg-background border border-border rounded font-serif text-xs leading-relaxed text-foreground">
+                        <span className="font-mono text-[10px] text-muted-foreground uppercase block mb-1">ORIGINAL CLAUSE PROVISION:</span>
+                        "{clause.originalText}"
+                      </div>
+
+                      {clause.rewriteOption && (
+                        <div className="p-3 bg-[#EDF4EF] dark:bg-[#1B2E21] border border-[#BCD4C4] dark:border-[#2C4F37] rounded font-serif text-xs leading-relaxed text-[#154027] dark:text-[#4E8B65]">
+                          <span className="font-mono text-[10px] text-[#234D34] dark:text-[#4E8B65] uppercase block mb-1 font-bold">PROPOSED REDLINE REWRITE:</span>
+                          "{clause.rewriteOption}"
+                        </div>
+                      )}
+                    </div>
+
+                    {isExpanded && (
+                      <div className="pt-3 border-t border-border space-y-2 text-xs font-sans">
+                        <p className="text-muted-foreground"><strong className="text-foreground font-mono">Analysis:</strong> {clause.explanation}</p>
+                        <p className="text-muted-foreground"><strong className="text-foreground font-mono">Negotiation Strategy:</strong> {clause.negotiationSuggestion}</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </TabsContent>
+                );
+              })}
+            </TabsContent>
 
-        <TabsContent value="redflags" className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            {result.redFlags.map((rf) => (
-              <div key={rf.id} className="paper-card p-5 rounded-lg space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold text-[#6B1D1D] dark:text-[#E87A7A] uppercase flex items-center gap-1.5">
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    {rf.clause}
-                  </span>
-                  <span className="badge-risk-danger px-2 py-0.5 rounded text-[10px] font-mono">HIGH</span>
-                </div>
-                <h4 className="text-sm font-serif font-bold text-foreground">{rf.title}</h4>
-                <p className="text-xs text-muted-foreground leading-relaxed font-sans">{rf.description}</p>
-                <div className="pt-2 border-t border-border text-[11px] font-mono text-muted-foreground">
-                  <span>Exposure Impact: </span>
-                  <span className="text-foreground font-medium">{rf.impact}</span>
-                </div>
+            <TabsContent value="redflags" className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                {result.redFlags.map((rf) => (
+                  <div key={rf.id} className="paper-card paper-card-interactive p-5 rounded-lg space-y-3 group">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-mono font-bold text-[#6B1D1D] dark:text-[#E87A7A] uppercase flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 icon-zoom" />
+                        {rf.clause}
+                      </span>
+                      <span className="badge-risk-danger px-2 py-0.5 rounded text-[10px] font-mono">HIGH</span>
+                    </div>
+                    <h4 className="text-sm font-serif font-bold text-foreground">{rf.title}</h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed font-sans">{rf.description}</p>
+                    <div className="pt-2 border-t border-border text-[11px] font-mono text-muted-foreground">
+                      <span>Exposure Impact: </span>
+                      <span className="text-foreground font-medium">{rf.impact}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </TabsContent>
+            </TabsContent>
 
-        <TabsContent value="dates" className="space-y-4">
-          <div className="grid md:grid-cols-3 gap-4">
-            {result.dates.map((dt) => (
-              <div key={dt.id} className="paper-card p-5 rounded-lg space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{dt.label}</span>
-                  <Calendar className="w-4 h-4 text-[#8C6721] dark:text-[#C99A52]" />
-                </div>
-                <p className="text-lg font-serif font-bold text-foreground">{dt.date}</p>
-                <p className="text-xs text-muted-foreground font-sans">{dt.description}</p>
+            <TabsContent value="dates" className="space-y-4">
+              <div className="grid md:grid-cols-3 gap-4">
+                {result.dates.map((dt) => (
+                  <div key={dt.id} className="paper-card paper-card-interactive p-5 rounded-lg space-y-2 group">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{dt.label}</span>
+                      <div className="w-7 h-7 rounded bg-[#F9F5EB] dark:bg-[#2A2621] border border-[#E6CFAB] dark:border-[#343029] flex items-center justify-center icon-box-zoom">
+                        <Calendar className="w-3.5 h-3.5 text-[#8C6721] dark:text-[#C99A52] icon-zoom" />
+                      </div>
+                    </div>
+                    <p className="text-lg font-serif font-bold text-foreground">{dt.date}</p>
+                    <p className="text-xs text-muted-foreground font-sans">{dt.description}</p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
+        </MotionItem>
+      </MotionSection>
     </div>
   );
 }

@@ -30,7 +30,7 @@ const sidebarItems = [
 
 const bottomItems = [
   { icon: Settings, label: "Settings", href: "/dashboard/settings" },
-  { icon: HelpCircle, label: "Compliance & Docs", href: "#" },
+  { icon: HelpCircle, label: "Compliance & Docs", href: "/dashboard/settings#compliance" },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

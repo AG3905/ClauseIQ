@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { MotionSection, MotionItem } from "@/components/motion";
 
 type UploadMode = "upload" | "paste" | "ocr";
 
@@ -123,22 +124,24 @@ export default function AnalyzePage() {
   return (
     <div className="max-w-5xl mx-auto space-y-8 text-foreground transition-colors duration-200">
       {/* Header */}
-      <div className="pb-4 border-b border-border space-y-1">
-        <div className="flex items-center gap-2 font-mono text-xs text-[#8C6721] dark:text-[#C99A52] uppercase tracking-wider">
-          <FileCheck className="w-3.5 h-3.5" />
-          <span>Ingestion & Redline Engine</span>
-        </div>
-        <h1 className="text-3xl font-serif font-bold text-foreground">Submit Contract for Audit</h1>
-        <p className="text-xs text-muted-foreground">
-          Upload PDF, DOCX, scanned image or paste clause text for automated risk evaluation and margin redlining.
-        </p>
-      </div>
+      <MotionSection amount={0.2} className="pb-4 border-b border-border space-y-1">
+        <MotionItem>
+          <div className="flex items-center gap-2 font-mono text-xs text-[#8C6721] dark:text-[#C99A52] uppercase tracking-wider">
+            <FileCheck className="w-3.5 h-3.5" />
+            <span>Ingestion & Redline Engine</span>
+          </div>
+          <h1 className="text-3xl font-serif font-bold text-foreground">Submit Contract for Audit</h1>
+          <p className="text-xs text-muted-foreground">
+            Upload PDF, DOCX, scanned image or paste clause text for automated risk evaluation and margin redlining.
+          </p>
+        </MotionItem>
+      </MotionSection>
 
-      <div className="grid lg:grid-cols-3 gap-8">
+      <MotionSection amount={0.15} className="grid lg:grid-cols-3 gap-8">
         {/* Left Column: Upload / Input Workspace */}
         <div className="lg:col-span-2 space-y-4">
           {/* Mode Selector Tabs */}
-          <div className="flex gap-2">
+          <MotionItem className="flex gap-2">
             {[
               { mode: "upload" as const, icon: Upload, label: "Upload Document" },
               { mode: "paste" as const, icon: ClipboardPaste, label: "Paste Text" },
@@ -148,7 +151,7 @@ export default function AnalyzePage() {
                 key={m.mode}
                 variant="outline"
                 onClick={() => setMode(m.mode)}
-                className={`text-xs font-mono h-9 transition-colors font-semibold ${
+                className={`text-xs font-mono h-9 transition-colors font-semibold btn-zoom ${
                   mode === m.mode
                     ? "bg-[#8C6721] dark:bg-[#C99A52] text-white dark:text-[#171512] border-[#785628] dark:border-[#B38743] hover:bg-[#6E4E1C]"
                     : "bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground"
@@ -159,119 +162,125 @@ export default function AnalyzePage() {
                 {m.label}
               </Button>
             ))}
-          </div>
+          </MotionItem>
 
           {/* Upload / Paste Container */}
-          {mode === "paste" ? (
-            <Card className="paper-card rounded-lg border-border">
-              <CardContent className="p-4">
-                <Textarea
-                  aria-label="Paste agreement text"
-                  title="Paste agreement text"
-                  placeholder="Paste legal agreement text or specific clause provisions here..."
-                  className="min-h-[280px] bg-background border-border focus:border-[#8C6721] dark:focus:border-[#C99A52] text-xs font-serif text-foreground leading-relaxed resize-none"
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                />
-                <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground mt-2">
-                  <span>{text.length} characters • {text.split(/\s+/).filter(Boolean).length} words</span>
-                  <span>UTF-8 Document Spec</span>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card
-              className={`paper-card cursor-pointer transition-all border-2 border-dashed ${
-                dragging ? "border-[#8C6721] dark:border-[#C99A52] bg-muted/60" : "border-border hover:border-[#8C6721]/60 dark:hover:border-[#C99A52]/60"
-              }`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => fileInput.current?.click()}
-            >
-              <CardContent className="p-12 flex flex-col items-center justify-center text-center">
-                <input
-                  ref={fileInput}
-                  type="file"
-                  className="hidden"
-                  aria-label="Upload contract document file"
-                  title="Upload contract document file"
-                  accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
-                  onChange={(e) => e.target.files?.[0] && validateAndSetFile(e.target.files[0])}
-                />
-                {file ? (
-                  <div className="flex flex-col items-center gap-3 space-y-1">
-                    <div className="w-12 h-12 rounded bg-[#F9F5EB] dark:bg-[#2A2621] border border-[#E6CFAB] dark:border-[#343029] flex items-center justify-center text-[#8C6721] dark:text-[#C99A52]">
-                      <FileText className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="font-serif font-bold text-sm text-foreground">{file.name}</p>
-                      <p className="text-[11px] font-mono text-muted-foreground mt-0.5">
-                        {fileTypeLabels[file.type] || "DOCUMENT FILE"} • {(file.size / 1024).toFixed(1)} KB
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs font-mono text-[#6B1D1D] dark:text-[#E87A7A] hover:bg-[#FCF0F0] dark:hover:bg-[#2C1414]"
-                      onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                    >
-                      <X className="w-3.5 h-3.5 mr-1" /> Remove File
-                    </Button>
+          <MotionItem>
+            {mode === "paste" ? (
+              <Card className="paper-card rounded-lg border-border">
+                <CardContent className="p-4">
+                  <Textarea
+                    aria-label="Paste agreement text"
+                    title="Paste agreement text"
+                    placeholder="Paste legal agreement text or specific clause provisions here..."
+                    className="min-h-[280px] bg-background border-border focus:border-[#8C6721] dark:focus:border-[#C99A52] text-xs font-serif text-foreground leading-relaxed resize-none"
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                  />
+                  <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground mt-2">
+                    <span>{text.length} characters • {text.split(/\s+/).filter(Boolean).length} words</span>
+                    <span>UTF-8 Document Spec</span>
                   </div>
-                ) : (
-                  <>
-                    <div className="w-14 h-14 rounded bg-[#F9F5EB] dark:bg-[#2A2621] border border-[#E6CFAB] dark:border-[#343029] flex items-center justify-center text-[#8C6721] dark:text-[#C99A52] mb-3">
-                      <Upload className="w-7 h-7" />
+                </CardContent>
+              </Card>
+            ) : (
+              <Card
+                className={`paper-card paper-card-interactive group cursor-pointer transition-all border-2 border-dashed ${
+                  dragging ? "border-[#8C6721] dark:border-[#C99A52] bg-muted/60" : "border-border hover:border-[#8C6721]/60 dark:hover:border-[#C99A52]/60"
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInput.current?.click()}
+              >
+                <CardContent className="p-12 flex flex-col items-center justify-center text-center">
+                  <input
+                    ref={fileInput}
+                    type="file"
+                    className="hidden"
+                    aria-label="Upload contract document file"
+                    title="Upload contract document file"
+                    accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
+                    onChange={(e) => e.target.files?.[0] && validateAndSetFile(e.target.files[0])}
+                  />
+                  {file ? (
+                    <div className="flex flex-col items-center gap-3 space-y-1">
+                      <div className="w-12 h-12 rounded bg-[#F9F5EB] dark:bg-[#2A2621] border border-[#E6CFAB] dark:border-[#343029] flex items-center justify-center text-[#8C6721] dark:text-[#C99A52] icon-box-zoom">
+                        <FileText className="w-6 h-6 icon-zoom" />
+                      </div>
+                      <div>
+                        <p className="font-serif font-bold text-sm text-foreground">{file.name}</p>
+                        <p className="text-[11px] font-mono text-muted-foreground mt-0.5">
+                          {fileTypeLabels[file.type] || "DOCUMENT FILE"} • {(file.size / 1024).toFixed(1)} KB
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs font-mono text-[#6B1D1D] dark:text-[#E87A7A] hover:bg-[#FCF0F0] dark:hover:bg-[#2C1414] btn-zoom"
+                        onClick={(e) => { e.stopPropagation(); setFile(null); }}
+                      >
+                        <X className="w-3.5 h-3.5 mr-1" /> Remove File
+                      </Button>
                     </div>
-                    <p className="font-serif font-bold text-base text-foreground">Drag & Drop Agreement File</p>
-                    <p className="text-xs text-muted-foreground mt-1 mb-4">or click to browse local filesystem</p>
-                    <div className="flex gap-2 font-mono text-[10px]">
-                      {["PDF", "DOCX", "TXT", "OCR SCAN"].map((ext) => (
-                        <span key={ext} className="px-2.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
-                          {ext}
-                        </span>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                  ) : (
+                    <>
+                      <div className="w-14 h-14 rounded bg-[#F9F5EB] dark:bg-[#2A2621] border border-[#E6CFAB] dark:border-[#343029] flex items-center justify-center text-[#8C6721] dark:text-[#C99A52] mb-3 icon-box-zoom">
+                        <Upload className="w-7 h-7 icon-zoom" />
+                      </div>
+                      <p className="font-serif font-bold text-base text-foreground">Drag & Drop Agreement File</p>
+                      <p className="text-xs text-muted-foreground mt-1 mb-4">or click to browse local filesystem</p>
+                      <div className="flex gap-2 font-mono text-[10px]">
+                        {["PDF", "DOCX", "TXT", "OCR SCAN"].map((ext) => (
+                          <span key={ext} className="px-2.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                            {ext}
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </MotionItem>
 
           {/* Processing Status Block */}
           {processing && (
-            <Card className="paper-card rounded-lg border-[#8C6721] dark:border-[#C99A52]">
-              <CardContent className="p-5 space-y-3">
-                <div className="flex items-center gap-3">
-                  <Loader2 className="w-4 h-4 text-[#8C6721] dark:text-[#C99A52] animate-spin" />
-                  <p className="text-xs font-serif font-semibold text-foreground">{step}</p>
-                </div>
-                <Progress value={progress} className="h-2 bg-muted" />
-                <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
-                  <span>Progress: {progress}%</span>
-                  <span>Structured JSON Parsing</span>
-                </div>
-              </CardContent>
-            </Card>
+            <MotionItem>
+              <Card className="paper-card rounded-lg border-[#8C6721] dark:border-[#C99A52]">
+                <CardContent className="p-5 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="w-4 h-4 text-[#8C6721] dark:text-[#C99A52] animate-spin" />
+                    <p className="text-xs font-serif font-semibold text-foreground">{step}</p>
+                  </div>
+                  <Progress value={progress} className="h-2 bg-muted" />
+                  <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
+                    <span>Progress: {progress}%</span>
+                    <span>Structured JSON Parsing</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </MotionItem>
           )}
 
           {/* Submit Action Button */}
           {!processing && (
-            <Button
-              onClick={handleAnalyze}
-              className="w-full h-11 bg-[#8C6721] hover:bg-[#6E4E1C] dark:bg-[#C99A52] dark:hover:bg-[#B38743] text-white dark:text-[#171512] border border-[#785628] dark:border-[#B38743] shadow-xs text-xs font-semibold"
-              disabled={!file && !text.trim()}
-            >
-              Analyze Document & Generate Redlines
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+            <MotionItem>
+              <Button
+                onClick={handleAnalyze}
+                className="w-full h-11 bg-[#8C6721] hover:bg-[#6E4E1C] dark:bg-[#C99A52] dark:hover:bg-[#B38743] text-white dark:text-[#171512] border border-[#785628] dark:border-[#B38743] shadow-xs text-xs font-semibold btn-zoom"
+                disabled={!file && !text.trim()}
+              >
+                Analyze Document & Generate Redlines
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </MotionItem>
           )}
         </div>
 
         {/* Right Column: Parameters & Specifications */}
-        <div className="space-y-4">
-          <Card className="paper-card rounded-lg border-border">
+        <MotionItem className="space-y-4">
+          <Card className="paper-card paper-card-interactive rounded-lg border-border">
             <CardHeader className="border-b border-border p-4">
               <CardTitle className="text-sm font-serif font-bold text-foreground">Audit Specifications</CardTitle>
             </CardHeader>
@@ -281,20 +290,20 @@ export default function AnalyzePage() {
                 { icon: AlertTriangle, title: "Red Flag Exposure", desc: "Flags uncapped liabilities, non-standard indemnities, and termination asymmetry." },
                 { icon: CheckCircle, title: "Margin Redlining", desc: "Generates struck-through original text alongside inserted counter-proposal rewrites." },
               ].map((param, i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="w-8 h-8 rounded bg-[#F9F5EB] dark:bg-[#2A2621] border border-[#E6CFAB] dark:border-[#343029] flex items-center justify-center text-[#8C6721] dark:text-[#C99A52] flex-shrink-0">
-                    <param.icon className="w-4 h-4" />
+                <div key={i} className="flex gap-3 group">
+                  <div className="w-8 h-8 rounded bg-[#F9F5EB] dark:bg-[#2A2621] border border-[#E6CFAB] dark:border-[#343029] flex items-center justify-center text-[#8C6721] dark:text-[#C99A52] flex-shrink-0 icon-box-zoom">
+                    <param.icon className="w-4 h-4 icon-zoom" />
                   </div>
                   <div>
-                    <p className="font-serif font-semibold text-foreground">{param.title}</p>
+                    <p className="font-serif font-semibold text-foreground group-hover:text-[#8C6721] dark:group-hover:text-[#C99A52] transition-colors">{param.title}</p>
                     <p className="text-muted-foreground text-[11px] leading-relaxed mt-0.5">{param.desc}</p>
                   </div>
                 </div>
               ))}
             </CardContent>
           </Card>
-        </div>
-      </div>
+        </MotionItem>
+      </MotionSection>
     </div>
   );
 }

@@ -1,32 +1,22 @@
-import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
+import { NextRequest, NextResponse } from "next/server";
+import { createServerSupabaseClient } from "@/lib/supabase";
 
-export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
-  providers: [
-    CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
-      },
-      async authorize(credentials) {
-        // Demo implementation
-        if (credentials?.email === "demo@example.com" && credentials?.password === "password") {
-          return { id: "1", name: "Demo User", email: "demo@example.com" };
-        }
-        return null; // Return null if authentication fails
-      }
-    })
-  ],
-  pages: {
-    signIn: "/sign-in",
-  },
-  callbacks: {
-    async session({ session, token }) {
-      if (session?.user && token?.sub) {
-        session.user.id = token.sub;
-      }
-      return session;
-    },
-  },
-});
+export async function GET(request: NextRequest) {
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get("code");
+  const next = requestUrl.searchParams.get("next") || "/dashboard";
+
+  if (code) {
+    const supabase = await createServerSupabaseClient();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      return NextResponse.redirect(`${requestUrl.origin}${next}`);
+    }
+  }
+
+  return NextResponse.redirect(`${requestUrl.origin}/sign-in`);
+}
+
+export async function POST() {
+  return NextResponse.json({ message: "Supabase Auth Route Active" });
+}
