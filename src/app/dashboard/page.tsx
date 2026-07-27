@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   FileText, AlertTriangle, Upload,
   ArrowUpRight, Shield, Clock, FileCheck, ArrowRight
@@ -48,6 +49,12 @@ const statCards = [
 ];
 
 export default function DashboardPage() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <div className="space-y-8 text-foreground transition-colors duration-200">
       {/* Editorial Page Header */}
@@ -132,36 +139,40 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="pt-6 pb-4 px-6">
               <div className="w-full h-56 min-w-0 min-h-[224px]">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                  <AreaChart data={chartData}>
-                    <defs>
-                      <linearGradient id="sealGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.25} />
-                        <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="2 2" stroke="var(--border)" />
-                    <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} fontFamily="var(--font-mono)" />
-                    <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} fontFamily="var(--font-mono)" />
-                    <Tooltip
-                      contentStyle={{
-                        background: "var(--card)",
-                        border: "1px solid var(--border)",
-                        borderRadius: "6px",
-                        color: "var(--card-foreground)",
-                        fontSize: "12px",
-                        fontFamily: "var(--font-mono)",
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="analyses"
-                      stroke="var(--primary)"
-                      strokeWidth={2}
-                      fill="url(#sealGrad)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {mounted ? (
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                    <AreaChart data={chartData}>
+                      <defs>
+                        <linearGradient id="sealGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.25} />
+                          <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="2 2" stroke="var(--border)" />
+                      <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} fontFamily="var(--font-mono)" />
+                      <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} fontFamily="var(--font-mono)" />
+                      <Tooltip
+                        contentStyle={{
+                          background: "var(--card)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "6px",
+                          color: "var(--card-foreground)",
+                          fontSize: "12px",
+                          fontFamily: "var(--font-mono)",
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="analyses"
+                        stroke="var(--primary)"
+                        strokeWidth={2}
+                        fill="url(#sealGrad)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="w-full h-full min-h-[224px]" />
+                )}
               </div>
             </CardContent>
           </Card>

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   Scale, LayoutDashboard, FileSearch, History, GitCompare,
   Settings, HelpCircle,
@@ -35,6 +36,7 @@ const bottomItems = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -162,7 +164,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-3">
             <ThemeToggle />
 
-            <button aria-label="Notifications" title="Notifications" className="relative p-2.5 rounded hover:bg-muted text-muted-foreground transition-colors cursor-pointer">
+            <button
+              aria-label="Notifications"
+              title="Notifications"
+              onClick={() => toast.info("Counsel Notification Queue", { description: "2 high exposure risk alerts requiring review." })}
+              className="relative p-2.5 rounded hover:bg-muted text-muted-foreground transition-colors cursor-pointer"
+            >
               <Bell className="w-5 h-5" />
               <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#8C6721] dark:bg-[#C99A52]" />
             </button>
@@ -180,10 +187,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <p className="text-sm font-serif font-bold text-foreground">Senior Advocate</p>
                   <p className="text-xs font-mono text-muted-foreground">counsel@firm.com</p>
                 </div>
-                <DropdownMenuItem className="gap-2.5 text-xs font-medium hover:bg-muted p-2.5 cursor-pointer"><User className="w-4 h-4" /> Workspace Profile</DropdownMenuItem>
-                <DropdownMenuItem className="gap-2.5 text-xs font-medium hover:bg-muted p-2.5 cursor-pointer"><Settings className="w-4 h-4" /> Preferences</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => router.push("/dashboard/settings")}
+                  className="gap-2.5 text-xs font-medium hover:bg-muted p-2.5 cursor-pointer"
+                >
+                  <User className="w-4 h-4 text-[#8C6721] dark:text-[#C99A52]" />
+                  <span>Workspace Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => router.push("/dashboard/settings")}
+                  className="gap-2.5 text-xs font-medium hover:bg-muted p-2.5 cursor-pointer"
+                >
+                  <Settings className="w-4 h-4 text-[#8C6721] dark:text-[#C99A52]" />
+                  <span>Preferences</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-border" />
-                <DropdownMenuItem className="gap-2.5 text-xs font-medium text-[#6B1D1D] dark:text-[#E87A7A] hover:bg-[#FCF0F0] dark:hover:bg-[#2C1414] p-2.5 cursor-pointer"><LogOut className="w-4 h-4" /> End Session</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    toast.success("Session ended successfully");
+                    router.push("/sign-in");
+                  }}
+                  className="gap-2.5 text-xs font-medium text-[#6B1D1D] dark:text-[#E87A7A] hover:bg-[#FCF0F0] dark:hover:bg-[#2C1414] p-2.5 cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>End Session</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
