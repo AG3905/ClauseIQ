@@ -29,6 +29,7 @@ export default function SettingsPage() {
         if (user) {
           const userEmail = user.email || "";
           const userMetaName = user.user_metadata?.full_name || getDisplayName("", userEmail);
+          const userOrg = user.user_metadata?.organization || "";
           setEmail(userEmail);
 
           // Try loading from profiles table
@@ -42,6 +43,14 @@ export default function SettingsPage() {
             setFullName(profile.full_name);
           } else {
             setFullName(userMetaName);
+            // Auto-sync profile row to Supabase if missing
+            await supabase.from('profiles').upsert({
+              id: user.id,
+              email: userEmail,
+              full_name: userMetaName,
+              organization: userOrg,
+              updated_at: new Date().toISOString()
+            });
           }
           return;
         }
