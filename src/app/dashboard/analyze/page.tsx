@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { MotionSection, MotionItem } from "@/components/motion";
+import { saveUserAnalysisRecord } from "@/lib/supabase";
 
 type UploadMode = "upload" | "paste" | "ocr";
 
@@ -93,12 +94,24 @@ export default function AnalyzePage() {
 
       const analysisData = await analysisRes.json();
 
+      setStep("Saving analysis to workspace register...");
+      setProgress(95);
+
+      const docName = file?.name || "Pasted Contract Specimen";
+      await saveUserAnalysisRecord({
+        document_name: docName,
+        document_text: contractText,
+        verdict: analysisData.verdict || "review",
+        risk_score: analysisData.riskScore || 50,
+        result: analysisData
+      });
+
       setStep("Analysis complete.");
       setProgress(100);
 
       sessionStorage.setItem("analysisResult", JSON.stringify(analysisData));
       sessionStorage.setItem("contractText", contractText);
-      sessionStorage.setItem("documentName", file?.name || "Pasted Contract Specimen");
+      sessionStorage.setItem("documentName", docName);
 
       toast.success("Analysis complete.");
 

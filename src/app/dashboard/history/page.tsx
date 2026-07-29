@@ -1,19 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { FileText, Search, Clock, ArrowUpRight, Filter, Download } from "lucide-react";
+import { useState, useEffect } from "react";
+import { FileText, Search, Clock, Filter, Download, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { MotionSection, MotionItem } from "@/components/motion";
-
-const mockAuditHistory = [
-  { id: "aud-01", name: "Acme Corp – Vendor MSA 2026", type: "Commercial MSA", date: "2026-07-22", riskScore: "74/100", verdict: "danger" as const, label: "Action Req", author: "Senior Counsel" },
-  { id: "aud-02", name: "Globex Employment Agreement", type: "HR Employment", date: "2026-07-21", riskScore: "18/100", verdict: "safe" as const, label: "Low Risk", author: "Legal Associate" },
-  { id: "aud-03", name: "TechStart NDA – Series A", type: "Legal NDA", date: "2026-07-20", riskScore: "52/100", verdict: "review" as const, label: "Needs Review", author: "Senior Counsel" },
-  { id: "aud-04", name: "Cloud Service SLA Agreement", type: "IT SLA", date: "2026-07-18", riskScore: "24/100", verdict: "safe" as const, label: "Low Risk", author: "Contract Spec" },
-  { id: "aud-05", name: "Apex Data Processing Addendum", type: "Compliance DPA", date: "2026-07-15", riskScore: "68/100", verdict: "danger" as const, label: "Action Req", author: "DPO Counsel" },
-];
+import { fetchUserAnalyses, AnalysisItem } from "@/lib/supabase";
 
 const verdictBadges = {
   safe: "badge-risk-safe",
@@ -21,11 +14,34 @@ const verdictBadges = {
   danger: "badge-risk-danger",
 };
 
+const verdictLabels = {
+  safe: "Low Risk",
+  review: "Needs Review",
+  danger: "Action Req",
+};
+
 export default function HistoryPage() {
   const [search, setSearch] = useState("");
+  const [historyItems, setHistoryItems] = useState<AnalysisItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = mockAuditHistory.filter((item) =>
-    item.name.toLowerCase().includes(search.toLowerCase()) ||
+  useEffect(() => {
+    async function loadHistory() {
+      try {
+        const items = await fetchUserAnalyses();
+        setHistoryItems(items);
+      } catch {
+        setHistoryItems([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadHistory();
+  }, []);
+
+  const filtered = historyItems.filter((item) =>
+    item.document_name.toLowerCase().includes(search.toLowerCase()) ||
     item.type.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -86,36 +102,71 @@ export default function HistoryPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border text-xs">
-                  {filtered.map((item) => (
-                    <tr key={item.id} className="hover:bg-muted/40 transition-colors group">
-                      <td className="p-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded bg-[#F9F5EB] dark:bg-[#2A2621] border border-[#E6CFAB] dark:border-[#343029] flex items-center justify-center text-[#8C6721] dark:text-[#C99A52] icon-box-zoom">
-                            <FileText className="w-4 h-4 icon-zoom" />
-                          </div>
-                          <div>
-                            <p className="font-serif font-semibold text-foreground text-sm group-hover:text-[#8C6721] dark:group-hover:text-[#C99A52] transition-colors">{item.name}</p>
-                            <span className="text-[10px] font-mono text-muted-foreground">ID: {item.id}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4 px-6 font-mono text-muted-foreground">{item.type}</td>
-                      <td className="p-4 px-6 font-mono text-muted-foreground">{item.date}</td>
-                      <td className="p-4 px-6 font-mono font-bold text-foreground">{item.riskScore}</td>
-                      <td className="p-4 px-6 font-mono">
-                        <span className={`px-2.5 py-0.5 rounded text-[10px] uppercase font-medium ${verdictBadges[item.verdict]}`}>
-                          {item.label}
-                        </span>
-                      </td>
-                      <td className="p-4 px-6 text-right">
-                        <Link href="/dashboard/analysis-result">
-                          <Button variant="outline" size="sm" className="h-8 text-xs font-mono border-border bg-card hover:bg-muted text-foreground font-semibold btn-zoom">
-                            View Brief
-                          </Button>
-                        </Link>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-muted-foreground font-mono text-xs">
+                        Loading audit records...
                       </td>
                     </tr>
-                  ))}
+                  ) : filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-12 text-center text-muted-foreground space-y-3">
+                        <FileText className="w-8 h-8 mx-auto text-muted-foreground/60" />
+                        <p className="font-serif text-sm font-semibold text-foreground">No contract analyses found for your account</p>
+                        <p className="text-xs font-sans text-muted-foreground max-w-sm mx-auto">
+                          Audited contracts will appear here once you analyze a document under your authenticated session.
+                        </p>
+                        <div className="pt-2">
+                          <Link href="/dashboard/analyze">
+                            <Button className="bg-[#8C6721] hover:bg-[#6E4E1C] dark:bg-[#C99A52] dark:hover:bg-[#B38743] text-white dark:text-[#171512] text-xs font-semibold h-9 px-4">
+                              <Plus className="w-3.5 h-3.5 mr-1.5" /> Analyze First Document
+                            </Button>
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map((item) => (
+                      <tr key={item.id} className="hover:bg-muted/40 transition-colors group">
+                        <td className="p-4 px-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded bg-[#F9F5EB] dark:bg-[#2A2621] border border-[#E6CFAB] dark:border-[#343029] flex items-center justify-center text-[#8C6721] dark:text-[#C99A52] icon-box-zoom">
+                              <FileText className="w-4 h-4 icon-zoom" />
+                            </div>
+                            <div>
+                              <p className="font-serif font-semibold text-foreground text-sm group-hover:text-[#8C6721] dark:group-hover:text-[#C99A52] transition-colors">{item.document_name}</p>
+                              <span className="text-[10px] font-mono text-muted-foreground">ID: {item.id}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4 px-6 font-mono text-muted-foreground">{item.type}</td>
+                        <td className="p-4 px-6 font-mono text-muted-foreground">
+                          {new Date(item.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="p-4 px-6 font-mono font-bold text-foreground">{item.riskScore}</td>
+                        <td className="p-4 px-6 font-mono">
+                          <span className={`px-2.5 py-0.5 rounded text-[10px] uppercase font-medium ${verdictBadges[item.verdict] || verdictBadges.review}`}>
+                            {verdictLabels[item.verdict] || "Needs Review"}
+                          </span>
+                        </td>
+                        <td className="p-4 px-6 text-right">
+                          <Link
+                            href="/dashboard/analysis-result"
+                            onClick={() => {
+                              if (item.result) {
+                                sessionStorage.setItem("analysisResult", JSON.stringify(item.result));
+                                sessionStorage.setItem("documentName", item.document_name);
+                              }
+                            }}
+                          >
+                            <Button variant="outline" size="sm" className="h-8 text-xs font-mono border-border bg-card hover:bg-muted text-foreground font-semibold btn-zoom">
+                              View Brief
+                            </Button>
+                          </Link>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

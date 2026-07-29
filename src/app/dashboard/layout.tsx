@@ -20,6 +20,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  createBrowserSupabaseClient,
+  getLocalAuthSession,
+  clearLocalAuthSession,
+  getInitials,
+  getDisplayName
+} from "@/lib/supabase";
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Overview", href: "/dashboard" },
@@ -40,11 +47,58 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const [userName, setUserName] = useState("Senior Advocate");
+  const [userEmail, setUserEmail] = useState("counsel@firm.com");
+  const [userInitials, setUserInitials] = useState("SA");
+
   useEffect(() => {
     if (mobileOpen) {
       setMobileOpen(false);
     }
   }, [pathname]);
+
+  useEffect(() => {
+    async function loadUserIdentity() {
+      try {
+        const supabase = createBrowserSupabaseClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
+          const email = user.email || "";
+          const name = user.user_metadata?.full_name || getDisplayName("", email);
+          setUserName(name);
+          setUserEmail(email);
+          setUserInitials(getInitials(name, email));
+          return;
+        }
+      } catch {
+        // Fall back to local session
+      }
+
+      const localSession = getLocalAuthSession();
+      if (localSession) {
+        const email = localSession.email || "";
+        const name = getDisplayName(localSession.full_name, email);
+        setUserName(name);
+        setUserEmail(email);
+        setUserInitials(getInitials(name, email));
+      }
+    }
+
+    loadUserIdentity();
+  }, []);
+
+  const handleEndSession = async () => {
+    try {
+      const supabase = createBrowserSupabaseClient();
+      await supabase.auth.signOut();
+    } catch {
+      // Ignored
+    }
+    clearLocalAuthSession();
+    toast.success("Session ended successfully");
+    window.location.href = "/sign-in";
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex transition-colors duration-200">
@@ -178,14 +232,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <DropdownMenuTrigger aria-label="User menu" title="User menu" className="flex items-center gap-2 outline-none border-0 bg-transparent cursor-pointer">
                 <Avatar className="w-9 h-9 rounded border border-border">
                   <AvatarFallback className="bg-[#8C6721] dark:bg-[#C99A52] text-white dark:text-[#171512] text-xs font-mono font-bold">
-                    SA
+                    {userInitials}
                   </AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 paper-card border-border">
                 <div className="p-3 border-b border-border">
-                  <p className="text-sm font-serif font-bold text-foreground">Senior Advocate</p>
-                  <p className="text-xs font-mono text-muted-foreground">counsel@firm.com</p>
+                  <p className="text-sm font-serif font-bold text-foreground truncate">{userName}</p>
+                  <p className="text-xs font-mono text-muted-foreground truncate">{userEmail}</p>
                 </div>
                 <DropdownMenuItem
                   onClick={() => router.push("/dashboard/settings")}
@@ -203,10 +257,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-border" />
                 <DropdownMenuItem
-                  onClick={() => {
-                    toast.success("Session ended successfully");
-                    router.push("/sign-in");
-                  }}
+                  onClick={handleEndSession}
                   className="gap-2.5 text-xs font-medium text-[#6B1D1D] dark:text-[#E87A7A] hover:bg-[#FCF0F0] dark:hover:bg-[#2C1414] p-2.5 cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />

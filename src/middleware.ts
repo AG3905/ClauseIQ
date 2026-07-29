@@ -9,31 +9,48 @@ export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-  // If Supabase credentials are not configured or using placeholder, allow access to proceed
-  if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes("placeholder")) {
-    return supabaseResponse;
+  let user = null;
+
+  if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes("placeholder")) {
+    try {
+      const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+            supabaseResponse = NextResponse.next({
+              request,
+            });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, options)
+            );
+          },
+        },
+      });
+
+      const { data } = await supabase.auth.getUser();
+      user = data?.user || null;
+    } catch {
+      user = null;
+    }
   }
 
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        supabaseResponse = NextResponse.next({
-          request,
-        });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          supabaseResponse.cookies.set(name, value, options)
-        );
-      },
-    },
-  });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Fallback check for session cookie if Supabase user is not found
+  if (!user) {
+    const sessionCookie = request.cookies.get('clauseiq_session')?.value;
+    if (sessionCookie) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(sessionCookie));
+        if (parsed && parsed.email) {
+          user = parsed;
+        }
+      } catch {
+        // Invalid session cookie
+      }
+    }
+  }
 
   const isAuthPage =
     request.nextUrl.pathname.startsWith('/sign-in') ||
