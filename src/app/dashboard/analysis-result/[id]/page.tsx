@@ -1,17 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
-  AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronRight,
+  Shield, AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronRight,
   FileText, Calendar, Share2, Download, ArrowLeft
 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
 import type { AnalysisResult } from "@/types";
 import { MotionSection, MotionItem } from "@/components/motion";
+import { createBrowserSupabaseClient } from "@/lib/supabase";
+
+import { pdf } from "@react-pdf/renderer";
+import { ContractAuditPdfDocument } from "@/components/pdf-report";
+import { toast } from "sonner";
 
 const verdictConfig = {
   safe: {
@@ -46,36 +52,103 @@ const riskConfig = {
   high: { badge: "badge-risk-danger", rule: "margin-rule-high", text: "text-[#6B1D1D] dark:text-[#E87A7A]" },
 };
 
-export default function RootAnalysisResultPage() {
-  const router = useRouter();
+export default function DynamicAnalysisResultPage() {
+  const params = useParams();
+  const analysisId = params?.id as string;
+
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [docName, setDocName] = useState("");
+  const [auditDate, setAuditDate] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [exportingPdf, setExportingPdf] = useState(false);
   const [expandedClauses, setExpandedClauses] = useState<string[]>(["cl-1"]);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("analysisResult");
-    const name = sessionStorage.getItem("documentName");
-    if (stored) {
+    async function loadAnalysis() {
+      if (!analysisId) return;
+
       try {
-        setResult(JSON.parse(stored));
-        setDocName(name || "Contract Agreement");
+        const supabase = createBrowserSupabaseClient();
+        const { data: dbRow, error } = await supabase
+          .from("analyses")
+          .select("*")
+          .eq("id", analysisId)
+          .single();
+
+        if (!error && dbRow && dbRow.result) {
+          setResult(dbRow.result);
+          setDocName(dbRow.document_name || "Contract Agreement");
+          setAuditDate(new Date(dbRow.created_at).toLocaleDateString());
+          setLoading(false);
+          return;
+        }
       } catch {
-        router.push("/dashboard/history");
+        // Fall back to local session storage
       }
-    } else {
-      router.push("/dashboard/history");
+
+      const stored = sessionStorage.getItem("analysisResult");
+      const name = sessionStorage.getItem("documentName");
+      if (stored) {
+        try {
+          setResult(JSON.parse(stored));
+        } catch {
+          setResult(null);
+        }
+      }
+      setDocName(name || "Contract Agreement");
+      setAuditDate(new Date().toLocaleDateString());
+      setLoading(false);
     }
-  }, [router]);
+
+    loadAnalysis();
+  }, [analysisId]);
+
+  const handleExportPdf = async () => {
+    if (!result) return;
+    setExportingPdf(true);
+    try {
+      const blob = await pdf(<ContractAuditPdfDocument documentName={docName} result={result} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${docName.replace(/\s+/g, "_")}_ClauseIQ_Redline.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success("PDF report downloaded successfully!");
+    } catch (err) {
+      console.error("PDF Export error:", err);
+      toast.error("Failed to generate PDF report");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
 
   const toggleClause = (id: string) => {
     setExpandedClauses(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
   };
 
-  if (!result) {
+  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-3">
         <div className="w-8 h-8 border-2 border-[#8C6721] dark:border-[#C99A52] border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs font-mono text-muted-foreground">Redirecting to audit register...</p>
+        <p className="text-xs font-mono text-muted-foreground">Retrieving audit record from register...</p>
+      </div>
+    );
+  }
+
+  if (!result) {
+    return (
+      <div className="max-w-xl mx-auto text-center p-12 space-y-4">
+        <AlertTriangle className="w-10 h-10 mx-auto text-[#8C6721] dark:text-[#C99A52]" />
+        <h2 className="text-2xl font-serif font-bold text-foreground">Analysis Record Not Found</h2>
+        <p className="text-xs text-muted-foreground">The requested contract audit record could not be loaded or has been deleted.</p>
+        <Link href="/dashboard/history">
+          <Button className="bg-[#8C6721] hover:bg-[#6E4E1C] dark:bg-[#C99A52] dark:hover:bg-[#B38743] text-white dark:text-[#171512] text-xs font-semibold px-4 h-9">
+            Return to Audit Register
+          </Button>
+        </Link>
       </div>
     );
   }
@@ -96,9 +169,9 @@ export default function RootAnalysisResultPage() {
           </Link>
           <div>
             <div className="flex items-center gap-2 font-mono text-[11px] text-muted-foreground uppercase tracking-wider">
-              <span>Audit Brief</span>
+              <span>Audit Record ID: {analysisId.slice(0, 8)}...</span>
               <span>•</span>
-              <span>{new Date().toLocaleDateString()}</span>
+              <span>{auditDate}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground">{docName}</h1>
           </div>
@@ -107,8 +180,14 @@ export default function RootAnalysisResultPage() {
           <Button variant="outline" size="sm" className="h-9 text-xs font-mono bg-card border-border hover:bg-muted text-foreground font-semibold btn-zoom">
             <Share2 className="w-3.5 h-3.5 mr-2" /> Share Brief
           </Button>
-          <Button variant="outline" size="sm" className="h-9 text-xs font-mono bg-card border-border hover:bg-muted text-foreground font-semibold btn-zoom">
-            <Download className="w-3.5 h-3.5 mr-2" /> Export PDF Redline
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={exportingPdf}
+            onClick={handleExportPdf}
+            className="h-9 text-xs font-mono bg-card border-border hover:bg-muted text-foreground font-semibold btn-zoom"
+          >
+            <Download className="w-3.5 h-3.5 mr-2" /> {exportingPdf ? "Generating PDF..." : "Export PDF Redline"}
           </Button>
         </MotionItem>
       </MotionSection>

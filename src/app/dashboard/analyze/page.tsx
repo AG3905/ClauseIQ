@@ -78,13 +78,15 @@ export default function AnalyzePage() {
         contractText = extractData.text;
       }
 
+      const docName = file?.name || "Pasted Contract Specimen";
+
       setStep("Analyzing risk exposure & redlines...");
       setProgress(60);
 
       const analysisRes = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: contractText }),
+        body: JSON.stringify({ text: contractText, documentName: docName }),
       });
 
       if (!analysisRes.ok) throw new Error("Analysis process failed");
@@ -93,11 +95,11 @@ export default function AnalyzePage() {
       setProgress(90);
 
       const analysisData = await analysisRes.json();
+      const analysisId = analysisData.id || "aud-" + Math.random().toString(36).substring(2, 9);
 
       setStep("Saving analysis to workspace register...");
       setProgress(95);
 
-      const docName = file?.name || "Pasted Contract Specimen";
       await saveUserAnalysisRecord({
         document_name: docName,
         document_text: contractText,
@@ -116,7 +118,7 @@ export default function AnalyzePage() {
       toast.success("Analysis complete.");
 
       setTimeout(() => {
-        router.push("/dashboard/analysis-result");
+        router.push(`/dashboard/analysis-result/${analysisId}`);
       }, 400);
     } catch (error) {
       console.error(error);

@@ -36,7 +36,17 @@ export default function SignInPage() {
         password,
       });
 
-      if (data?.user) {
+      if (error) {
+        if (error.message?.toLowerCase().includes("email not confirmed")) {
+          toast.error("Email not confirmed. Please check your inbox and verify your email before signing in.");
+        } else {
+          toast.error(error.message);
+        }
+        setLoading(false);
+        return;
+      }
+
+      if (data?.user && data?.session) {
         const fullName = data.user.user_metadata?.full_name || email.split('@')[0];
         setLocalAuthSession({
           id: data.user.id,
@@ -49,41 +59,8 @@ export default function SignInPage() {
         window.location.href = "/dashboard";
         return;
       }
-
-      if (error) {
-        const isRateLimit = error.message?.toLowerCase().includes("rate") || error.status === 429;
-        const isPlaceholder = process.env.NEXT_PUBLIC_SUPABASE_URL?.includes("placeholder") || !process.env.NEXT_PUBLIC_SUPABASE_URL;
-
-        if (isRateLimit || isPlaceholder) {
-          const derivedName = email.split('@')[0].split(/[._-]/).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
-          setLocalAuthSession({
-            id: "usr_" + Math.random().toString(36).substring(2, 9),
-            email: email,
-            full_name: derivedName || "Counsel User",
-          });
-          toast.success("Signed in successfully");
-          window.location.href = "/dashboard";
-          return;
-        }
-        toast.error(error.message);
-        setLoading(false);
-        return;
-      }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Authentication failed";
-      const isRateLimit = errorMessage.toLowerCase().includes("rate") || errorMessage.toLowerCase().includes("limit");
-
-      if (isRateLimit) {
-        const derivedName = email.split('@')[0].split(/[._-]/).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
-        setLocalAuthSession({
-          id: "usr_" + Math.random().toString(36).substring(2, 9),
-          email: email,
-          full_name: derivedName || "Counsel User",
-        });
-        toast.success("Signed in successfully");
-        window.location.href = "/dashboard";
-        return;
-      }
       toast.error(errorMessage);
       setLoading(false);
     }

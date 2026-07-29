@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { Suspense } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   Scale, LayoutDashboard, FileSearch, History, GitCompare,
@@ -37,13 +38,17 @@ const sidebarItems = [
 ];
 
 const bottomItems = [
-  { icon: Settings, label: "Settings", href: "/dashboard/settings" },
-  { icon: HelpCircle, label: "Compliance & Docs", href: "/dashboard/settings#compliance" },
+  { icon: User, label: "Profile", href: "/dashboard/settings?tab=profile", tab: "profile" },
+  { icon: Settings, label: "Settings", href: "/dashboard/settings?tab=platform", tab: "platform" },
+  { icon: HelpCircle, label: "Compliance & Docs", href: "/dashboard/settings?tab=platform#compliance", tab: "platform" },
 ];
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get("tab") || "profile";
+
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -55,7 +60,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (mobileOpen) {
       setMobileOpen(false);
     }
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     async function loadUserIdentity() {
@@ -176,14 +181,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Bottom Items */}
         <div className="px-3 py-4 space-y-1 border-t border-[#292524] dark:border-[#2B2722]">
-          {bottomItems.map((item) => (
-            <Link key={item.href} href={item.href}>
-              <div className={`flex items-center gap-3.5 px-3.5 py-3 rounded text-sm font-semibold text-[#A8A29E] hover:text-[#FAF8F5] dark:hover:text-[#EDE7DA] hover:bg-[#292524]/50 transition-colors ${collapsed ? "justify-center px-0" : ""}`}>
-                <item.icon className="w-4.5 h-4.5 flex-shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
-              </div>
-            </Link>
-          ))}
+          {bottomItems.map((item) => {
+            const isSettingsPath = pathname === "/dashboard/settings";
+            const isActive = isSettingsPath
+              ? item.tab === currentTab && (item.label !== "Compliance & Docs" || window?.location?.hash === "#compliance")
+              : false;
+
+            return (
+              <Link key={item.label} href={item.href}>
+                <div
+                  className={`flex items-center gap-3.5 px-3.5 py-3 rounded text-sm font-semibold transition-colors cursor-pointer
+                    ${isActive
+                      ? "bg-[#292524] dark:bg-[#26221D] text-[#FAF8F5] dark:text-[#EDE7DA] border-l-2 border-[#8C6721] dark:border-[#C99A52]"
+                      : "text-[#A8A29E] hover:text-[#FAF8F5] dark:hover:text-[#EDE7DA] hover:bg-[#292524]/50"
+                    }
+                    ${collapsed ? "justify-center px-0" : ""}
+                  `}
+                >
+                  <item.icon className="w-4.5 h-4.5 flex-shrink-0" />
+                  {!collapsed && <span>{item.label}</span>}
+                </div>
+              </Link>
+            );
+          })}
         </div>
 
         {/* Collapse Toggle */}
@@ -242,18 +262,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <p className="text-xs font-mono text-muted-foreground truncate">{userEmail}</p>
                 </div>
                 <DropdownMenuItem
-                  onClick={() => router.push("/dashboard/settings")}
+                  onClick={() => router.push("/dashboard/settings?tab=profile")}
                   className="gap-2.5 text-xs font-medium hover:bg-muted p-2.5 cursor-pointer"
                 >
                   <User className="w-4 h-4 text-[#8C6721] dark:text-[#C99A52]" />
                   <span>Workspace Profile</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => router.push("/dashboard/settings")}
+                  onClick={() => router.push("/dashboard/settings?tab=platform")}
                   className="gap-2.5 text-xs font-medium hover:bg-muted p-2.5 cursor-pointer"
                 >
                   <Settings className="w-4 h-4 text-[#8C6721] dark:text-[#C99A52]" />
-                  <span>Preferences</span>
+                  <span>Platform Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-border" />
                 <DropdownMenuItem
@@ -276,3 +296,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   );
 }
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </Suspense>
+  );
+}
+

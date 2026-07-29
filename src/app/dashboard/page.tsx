@@ -20,16 +20,6 @@ import {
   AnalysisItem
 } from "@/lib/supabase";
 
-const chartData = [
-  { name: "Mon", analyses: 4 },
-  { name: "Tue", analyses: 7 },
-  { name: "Wed", analyses: 5 },
-  { name: "Thu", analyses: 12 },
-  { name: "Fri", analyses: 9 },
-  { name: "Sat", analyses: 3 },
-  { name: "Sun", analyses: 6 },
-];
-
 const riskBadgeStyle = {
   safe: "badge-risk-safe",
   review: "badge-risk-review",
@@ -84,10 +74,29 @@ export default function DashboardPage() {
     ? Math.round(userAnalyses.reduce((acc, curr) => acc + (parseInt(curr.riskScore) || 50), 0) / totalAnalyzed)
     : 0;
 
+  // Build real daily volume chart data for the last 7 days
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const now = new Date();
+  const dailyCounts: { name: string; analyses: number }[] = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(now.getDate() - i);
+    const dayLabel = days[d.getDay()];
+    const dateStr = d.toISOString().split("T")[0];
+
+    const count = userAnalyses.filter(item => {
+      if (!item.created_at) return false;
+      return item.created_at.startsWith(dateStr);
+    }).length;
+
+    dailyCounts.push({ name: dayLabel, analyses: count });
+  }
+
   const statCards = [
-    { label: "Contracts Analyzed", value: totalAnalyzed.toString(), change: totalAnalyzed > 0 ? "+1" : undefined, up: true, icon: FileText },
+    { label: "Contracts Analyzed", value: totalAnalyzed.toString(), change: totalAnalyzed > 0 ? `+${totalAnalyzed}` : undefined, up: true, icon: FileText },
     { label: "High Exposure Alerts", value: highExposureCount.toString(), badge: highExposureCount > 0 ? "Action Req" : undefined, icon: AlertTriangle },
-    { label: "Avg. Portfolio Risk", value: totalAnalyzed > 0 ? `${avgRisk}/100` : "0/100", sublabel: avgRisk > 60 ? "High Exposure" : "Low Exposure", icon: Shield },
+    { label: "Avg. Portfolio Risk", value: totalAnalyzed > 0 ? `${avgRisk}/100` : "0/100", sublabel: avgRisk > 60 ? "High Exposure" : "Standard Exposure", icon: Shield },
   ];
 
   return (
@@ -176,7 +185,7 @@ export default function DashboardPage() {
               <div className="w-full h-56 min-w-0 min-h-[224px]">
                 {mounted ? (
                   <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                    <AreaChart data={chartData}>
+                    <AreaChart data={dailyCounts}>
                       <defs>
                         <linearGradient id="sealGrad" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.25} />
@@ -273,7 +282,7 @@ export default function DashboardPage() {
                         {riskLabels[item.verdict] || "Needs Review"}
                       </span>
                       <Link
-                        href="/dashboard/analysis-result"
+                        href={`/dashboard/analysis-result/${item.id}`}
                         onClick={() => {
                           if (item.result) {
                             sessionStorage.setItem("analysisResult", JSON.stringify(item.result));

@@ -22,6 +22,8 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const [confirmationRequired, setConfirmationRequired] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -47,63 +49,35 @@ export default function SignUpPage() {
         },
       });
 
-      if (data?.user) {
-        try {
-          await supabase.from('profiles').upsert({
-            id: data.user.id,
-            email: email,
-            full_name: fullName,
-            organization: org,
-          });
-        } catch {
-          // Table may not be initialized yet
-        }
-
-        setLocalAuthSession({
-          id: data.user.id,
-          email: data.user.email || email,
-          full_name: fullName,
-          organization: org,
-        });
-
-        toast.success("Account created successfully!");
-        window.location.href = "/dashboard";
-        return;
-      }
-
       if (error) {
-        const isRateLimit = error.message?.toLowerCase().includes("rate") || error.status === 429;
-        if (isRateLimit) {
-          setLocalAuthSession({
-            id: "usr_" + Math.random().toString(36).substring(2, 9),
-            email: email,
-            full_name: fullName,
-            organization: org,
-          });
-          toast.success("Account created successfully");
-          window.location.href = "/dashboard";
-          return;
-        }
         toast.error(error.message);
         setLoading(false);
         return;
       }
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Registration failed";
-      const isRateLimit = errorMessage.toLowerCase().includes("rate") || errorMessage.toLowerCase().includes("limit");
 
-      if (isRateLimit) {
-        const fullName = `${firstName} ${lastName}`.trim() || email.split('@')[0];
-        setLocalAuthSession({
-          id: "usr_" + Math.random().toString(36).substring(2, 9),
-          email: email,
-          full_name: fullName,
-          organization: org,
-        });
-        toast.success("Account created successfully");
-        window.location.href = "/dashboard";
+      if (data?.user) {
+        // If Supabase returned an active session (Email Confirmation is disabled or auto-confirmed)
+        if (data.session) {
+          setLocalAuthSession({
+            id: data.user.id,
+            email: data.user.email || email,
+            full_name: fullName,
+            organization: org,
+          });
+
+          toast.success("Account created successfully!");
+          window.location.href = "/dashboard";
+          return;
+        }
+
+        // If data.session is null (Email Confirmation is enabled in Supabase)
+        setConfirmationRequired(true);
+        setLoading(false);
+        toast.info("Account created! Please check your email to confirm your account before signing in.", { duration: 8000 });
         return;
       }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Registration failed";
       toast.error(errorMessage);
       setLoading(false);
     }
@@ -156,10 +130,31 @@ export default function SignUpPage() {
           <MotionSection amount={0.2} className="w-full max-w-md">
             <MotionItem>
               <div className="paper-card paper-card-interactive rounded-lg p-8 space-y-6">
-                <div className="text-center space-y-2">
-                  <h1 className="text-2xl font-serif font-bold text-foreground">Request Access</h1>
-                  <p className="text-xs text-muted-foreground">Create your ClauseIQ workspace account</p>
-                </div>
+                {confirmationRequired ? (
+                  <div className="space-y-6 text-center">
+                    <div className="w-12 h-12 mx-auto rounded-full bg-[#F9F5EB] dark:bg-[#2A2621] border border-[#E6CFAB] dark:border-[#343029] flex items-center justify-center text-[#8C6721] dark:text-[#C99A52]">
+                      <Mail className="w-6 h-6" />
+                    </div>
+                    <div className="space-y-2">
+                      <h1 className="text-2xl font-serif font-bold text-foreground">Check Your Email</h1>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        A verification email has been sent to <span className="font-semibold text-foreground">{email}</span>. Please click the link in your email to confirm your account before signing in.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => router.push("/sign-in")}
+                      className="w-full h-10 bg-[#8C6721] hover:bg-[#6E4E1C] dark:bg-[#C99A52] dark:hover:bg-[#B38743] text-white dark:text-[#171512] text-xs font-semibold border border-[#785628] dark:border-[#B38743] btn-zoom"
+                    >
+                      Go to Sign In
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-center space-y-2">
+                      <h1 className="text-2xl font-serif font-bold text-foreground">Request Access</h1>
+                      <p className="text-xs text-muted-foreground">Create your ClauseIQ workspace account</p>
+                    </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
@@ -270,6 +265,8 @@ export default function SignUpPage() {
                     Sign In
                   </Link>
                 </p>
+                  </>
+                )}
               </div>
             </MotionItem>
           </MotionSection>

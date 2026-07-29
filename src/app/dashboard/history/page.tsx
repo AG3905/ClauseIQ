@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FileText, Search, Clock, Filter, Download, Plus } from "lucide-react";
+import { FileText, Search, Clock, Filter, Download, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { MotionSection, MotionItem } from "@/components/motion";
-import { fetchUserAnalyses, AnalysisItem } from "@/lib/supabase";
+import { fetchUserAnalyses, AnalysisItem, createBrowserSupabaseClient } from "@/lib/supabase";
+import { toast } from "sonner";
 
 const verdictBadges = {
   safe: "badge-risk-safe",
@@ -24,6 +25,7 @@ export default function HistoryPage() {
   const [search, setSearch] = useState("");
   const [historyItems, setHistoryItems] = useState<AnalysisItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadHistory() {
@@ -39,6 +41,35 @@ export default function HistoryPage() {
 
     loadHistory();
   }, []);
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!confirm("Are you sure you want to delete this audit record from your register?")) {
+      return;
+    }
+
+    setDeletingId(id);
+
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { error } = await supabase.from("analyses").delete().eq("id", id);
+
+      if (error) {
+        toast.error("Failed to delete record: " + error.message);
+      } else {
+        setHistoryItems(prev => prev.filter(item => item.id !== id));
+        toast.success("Audit record deleted successfully");
+      }
+    } catch {
+      // Local fallback removal
+      setHistoryItems(prev => prev.filter(item => item.id !== id));
+      toast.success("Audit record deleted");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const filtered = historyItems.filter((item) =>
     item.document_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -150,19 +181,31 @@ export default function HistoryPage() {
                           </span>
                         </td>
                         <td className="p-4 px-6 text-right">
-                          <Link
-                            href="/dashboard/analysis-result"
-                            onClick={() => {
-                              if (item.result) {
-                                sessionStorage.setItem("analysisResult", JSON.stringify(item.result));
-                                sessionStorage.setItem("documentName", item.document_name);
-                              }
-                            }}
-                          >
-                            <Button variant="outline" size="sm" className="h-8 text-xs font-mono border-border bg-card hover:bg-muted text-foreground font-semibold btn-zoom">
-                              View Brief
+                          <div className="flex items-center justify-end gap-2">
+                            <Link
+                              href={`/dashboard/analysis-result/${item.id}`}
+                              onClick={() => {
+                                if (item.result) {
+                                  sessionStorage.setItem("analysisResult", JSON.stringify(item.result));
+                                  sessionStorage.setItem("documentName", item.document_name);
+                                }
+                              }}
+                            >
+                              <Button variant="outline" size="sm" className="h-8 text-xs font-mono border-border bg-card hover:bg-muted text-foreground font-semibold btn-zoom">
+                                View Brief
+                              </Button>
+                            </Link>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={deletingId === item.id}
+                              onClick={(e) => handleDelete(item.id, e)}
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-[#6B1D1D] dark:hover:text-[#E87A7A] hover:bg-[#FCF0F0] dark:hover:bg-[#2C1414] btn-zoom"
+                              title="Delete analysis record"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
                             </Button>
-                          </Link>
+                          </div>
                         </td>
                       </tr>
                     ))
