@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { MotionSection, MotionItem } from "@/components/motion";
 import { fetchUserAnalyses, AnalysisItem, createBrowserSupabaseClient } from "@/lib/supabase";
 import { toast } from "sonner";
+import { getApiUrl } from "@/lib/api-config";
 
 interface ComparisonRecord {
   id: string;
@@ -97,7 +98,7 @@ export default function ComparePage() {
     setComparing(true);
 
     try {
-      const res = await fetch("/api/compare", {
+      const res = await fetch(getApiUrl("/api/compare"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

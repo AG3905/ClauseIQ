@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { MotionSection, MotionItem } from "@/components/motion";
 import { fetchUserAnalyses, AnalysisItem, createBrowserSupabaseClient } from "@/lib/supabase";
 import { toast } from "sonner";
+import { getApiUrl } from "@/lib/api-config";
 
 interface ChatMsg {
   sender: "user" | "assistant";
@@ -129,7 +130,7 @@ export default function ChatPage() {
         content: m.text
       }));
 
-      const res = await fetch("/api/chat", {
+      const res = await fetch(getApiUrl("/api/chat"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

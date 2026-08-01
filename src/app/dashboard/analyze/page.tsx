@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { MotionSection, MotionItem } from "@/components/motion";
 import { saveUserAnalysisRecord } from "@/lib/supabase";
+import { getApiUrl } from "@/lib/api-config";
 
 type UploadMode = "upload" | "paste" | "ocr";
 
@@ -72,7 +73,7 @@ export default function AnalyzePage() {
         const formData = new FormData();
         formData.append("file", file);
 
-        const extractRes = await fetch("/api/extract", { method: "POST", body: formData });
+        const extractRes = await fetch(getApiUrl("/api/extract"), { method: "POST", body: formData });
         if (!extractRes.ok) throw new Error("Text extraction failed");
         const extractData = await extractRes.json();
         contractText = extractData.text;
@@ -83,7 +84,7 @@ export default function AnalyzePage() {
       setStep("Analyzing risk exposure & redlines...");
       setProgress(60);
 
-      const analysisRes = await fetch("/api/analyze", {
+      const analysisRes = await fetch(getApiUrl("/api/analyze"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: contractText, documentName: docName }),
